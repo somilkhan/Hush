@@ -61,3 +61,13 @@ Format per MASTER_HANDOVER §4.
 - **Trade-offs:** No compile evidence yet.
 - **Affected modules:** all Gradle modules.
 - **Verification:** `gradle projects` attempted with system Gradle 8.14.3, failed at plugin resolution (HTTP 403).
+
+## D-007 — Licence: GPL-3.0, open source
+- **Date:** 2026-11-24
+- **Decision:** HUSH is released under GPL-3.0 and developed as a public open-source repository (`somilkhan/hush`). Full text in `LICENSE` (copied from the system GPL-3 text).
+- **Context:** The upstream repo had its `LICENSE` file deleted. Owner chose open source. CloudStream is also GPL-3.0, so reuse is now legally simpler, but still needs proper attribution and notices.
+- **Options considered:** GPL-3.0 open source (chosen); closed/proprietary clean-room only.
+- **Reason:** Owner's choice (public repo, open source).
+- **Trade-offs:** Any copied or derived CloudStream code must keep copyright notices and be attributed. Extension API compatibility (`com.lagradost.cloudstream3.*` names) must still be reviewed for licence and attribution before implementation.
+- **Affected modules:** `LICENSE`, all source files (headers to be added when real code exists), docs/reverse-engineering/LICENSING_AUDIT.md.
+- **Verification:** `LICENSE` text copied from system GPL-3 file (Debian common-licenses). Attribution list not yet written.

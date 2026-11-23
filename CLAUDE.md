@@ -2,7 +2,7 @@
 
 ## Project identity
 - Working brand name: **HUSH** (chosen working name, NOT legally cleared).
-- Repository: `somilkhan/Hush` (not yet attached in this session; GitHub sign-in pending).
+- Repository: `somilkhan/hush` (public). Licence: GPL-3.0 (see LICENSE, DECISION_LOG D-007).
 - Package/namespace: NOT decided yet. Do not rename the package or repo blindly; first audit naming implications (see DECISION_LOG D-002).
 - Source of truth for the original brief: `MASTER_HANDOVER.md` (attached to the Claude Project; read with `project_read`).
 
@@ -19,7 +19,7 @@ A NEW, independent Android media application (Kotlin + Jetpack Compose) with an 
 
 ## Non-negotiable rules
 1. Independent application identity, package namespace and navigation.
-2. CloudStream code reuse only after licence audit (CloudStream is GPL-family; verify LICENSE and dependency licences before porting any code; preserve notices; record origins).
+2. Licence: GPL-3.0 (open source). CloudStream code may be reused only with proper attribution, copyright notices and GPL-3 compliance; record origin of every ported file.
 3. Never claim a feature works without verification evidence (build, test, or real-device run — state which).
 4. Never fake data to make UI look complete; mark prototypes clearly.
 5. Do not execute untrusted extension code with unrestricted privileges without a security analysis.
