@@ -98,3 +98,30 @@ Note: compatibility behaviour (what each extension supports) is owned by Agent 1
 4. P1 then P2 screens.
 
 Each screen is reviewed against this inventory before it is marked done. A screen with unimplemented states is not complete.
+
+---
+
+## M2 answers (Agent 3, docs only)
+
+### Q5. Which Discovery screens can be built without real contracts?
+
+Rule used: a screen can be built now if its shell, layout and state components need no data beyond a placeholder state. Screens that need a data shape or a rule that no contract defines are marked BLOCKED-ON-CONTRACT. No example data is used in any spec. Previews use empty and error states only, labelled "PREVIEW, NO DATA".
+
+| Screen | Status | What can be built now | What is blocked, and on what |
+|---|---|---|---|
+| Home (shell) | BUILDABLE with placeholder states | Top bar, row layout, `RowState` handling (Loading, Empty, Failed, Unsupported, Offline), the add-repository empty state and its action | Row content: needs `DiscoveryPort.sections()` agreed (INTEGRATION_CONTRACTS §4). Until then, rows show Loading or the empty state only |
+| Continue watching (Home row) | BUILDABLE on local data | Card and row, progress bar, remaining time, hidden-when-empty rule | Nothing from providers. Needs `PlaybackProgress` persistence (Agent 2, `:core:data`). Preview uses an empty list only |
+| Trending | BLOCKED-ON-CONTRACT | Layout and "no trending list" empty state can be drawn | `Section` has no kind field, so the app cannot tell a trending row from any other row. Needs a section kind from Agent 1 and Agent 2 (DOMAIN_MODEL §2) |
+| Categories | BLOCKED-ON-CONTRACT | Tile grid layout and empty state | No port method returns categories. Needs a new `DiscoveryPort` operation or a section kind. Adding one is a port change (INTEGRATION_CONTRACTS §7) |
+| Personalised recommendations | BLOCKED-ON-CONTRACT | Explanation empty state ("what generates these rows") and row layout | No recommendation rule is defined. Needs the owner to decide what generates picks, and whether it runs on-device from history and favourites. No invented picks, per SCREEN_INVENTORY §1 |
+| Related content (details row, P2) | BLOCKED-ON-CONTRACT | Row layout, hidden-when-empty rule | `MediaDetails.related` exists in the domain model, but MediaDetailsPort is not agreed (INTEGRATION_CONTRACTS §4) |
+
+Build order implied by this (no code yet, this is only for planning):
+1. Home shell and `RowState` components with empty and error states. Can start once Agent 2 confirms the feature-layer state shape from COMPONENT_CATALOG M2 Q1.
+2. Continue watching, once local progress persistence exists.
+3. Trending, Categories and Personalised: wait for contracts. Do not stub them with placeholder rows that look like content.
+
+Questions for Agent 2 (open):
+- Will `Section` carry a kind (for example `TRENDING`, `CATEGORY`, `GENERIC`), or will compat map it? The UI needs a kind to label rows correctly.
+- Who owns the recommendation rule? Design cannot define it.
+- Is there a home for categories in the port set, or should they be a `Section` with a grid layout hint?
