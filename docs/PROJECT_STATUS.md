@@ -1,11 +1,12 @@
 # PROJECT_STATUS (verified facts only)
 
-Last updated: 2026-11-24 (Agent 2 session)
+Last updated: 2026-11-24 (post-merge)
 
 - **Project name:** HUSH (working name, not legally cleared).
 - **Phase:** Phase 0 (workspace and feasibility), with Agent 2 skeleton and architecture drafts done. Phase 1 reconnaissance for Agents 1 and 3 not confirmed in this file.
-- **Repository:** `somilkhan/Hush` NOT attached. Local workspace only: `/home/claude/hush`.
-- **Branch / HEAD:** local `main`. HEAD is the commit that introduced the Agent 2 skeleton and architecture docs (see git log).
+- **Repository:** `somilkhan/Hush` (public, GPL-3.0). Attached and pushed. Remote URL: https://github.com/somilkhan/Hush.git
+- **Default branch:** `main` (HEAD `1253bb7`, bootstrap merged from `feature/project-bootstrap`).
+- **Branch / HEAD:** `main` at `1253bb7`, in sync with origin.
 - **Package namespace:** `app.hush.placeholder`. PROVISIONAL (DECISION_LOG D-002). Do not sign, publish or ship under it.
 
 ## Toolchain (verified 2026-11-24)
@@ -30,12 +31,11 @@ Last updated: 2026-11-24 (Agent 2 session)
 - `docs/architecture/`: ARCHITECTURE, TECH_STACK, DOMAIN_MODEL, INTEGRATION_CONTRACTS (DRAFT, NOT AGREED), DATA_FLOW, DECISIONS.
 
 ## Blockers
-1. GitHub sign-in needed to attach `somilkhan/Hush`.
 2. Network egress to Google Maven, Gradle distribution and Maven Central is blocked for this session, so no build or dependency resolution is possible here.
 3. Android SDK not installed and cannot be downloaded in this session.
 4. Namespace and brand naming audit pending (D-002).
 5. Provider port contracts need Agent 1 agreement before any implementation (INTEGRATION_CONTRACTS.md section 4).
-6. CloudStream LICENSE audit pending (Agent 1).
+6. CloudStream reuse: attribution and GPL-3 compliance rules now apply (DECISION_LOG D-007). Compat API-name review still needs legal check.
 
 ## Next actions
 1. Obtain network access (or a machine with it) and an Android SDK; regenerate the Gradle wrapper; run `./gradlew :app:assembleDebug` and record the result here.

@@ -2,7 +2,7 @@
 
 ## Project identity
 - Working brand name: **HUSH** (chosen working name, NOT legally cleared).
-- Repository: `somilkhan/hush` (public). Licence: GPL-3.0 (see LICENSE, DECISION_LOG D-007).
+- Repository: `somilkhan/Hush` (public, moved from lowercase name). Licence: GPL-3.0 (see LICENSE, DECISION_LOG D-007).
 - Package/namespace: NOT decided yet. Do not rename the package or repo blindly; first audit naming implications (see DECISION_LOG D-002).
 - Source of truth for the original brief: `MASTER_HANDOVER.md` (attached to the Claude Project; read with `project_read`).
 
