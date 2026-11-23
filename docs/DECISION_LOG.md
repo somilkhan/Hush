@@ -1,0 +1,63 @@
+# DECISION_LOG
+
+Format per MASTER_HANDOVER §4.
+
+---
+
+## D-001 — Working brand name: HUSH
+- **Date:** 2026-11-24
+- **Decision:** Use "HUSH" as the working project name across app identity, UI mockups, documentation and branding concepts.
+- **Context:** User instruction in session. Project was previously described as a CloudStream-style clone; user wants a new independent identity.
+- **Options considered:** Keep an internal codename only; adopt HUSH as the working name.
+- **Chosen approach:** HUSH as working name.
+- **Reason:** User decision.
+- **Trade-offs:** Name is NOT legally cleared. Trademark/app-store availability must be checked before any public release.
+- **Affected modules:** all docs, app name strings, icon/branding concepts.
+- **Verification:** Trademark and store-name search NOT yet performed (open item).
+
+## D-002 — Package namespace and repo name: PROVISIONAL placeholder `app.hush.placeholder`
+- **Date:** 2026-11-24 (provisional placeholder added 2026-11-24)
+- **Decision:** Do not rename the repository (`somilkhan/Hush`) or pick the final package namespace until naming implications are audited. Scaffolding uses the clearly temporary namespace and applicationId `app.hush.placeholder` (`core:data` uses `app.hush.placeholder.core.data`). Do not sign, publish or ship under it.
+- **Context:** User asked not to rename blindly. Gradle skeleton needs a namespace to exist at all.
+- **Options considered:** (a) Use `com.somilkhan.hush`; (b) use a neutral reverse-domain owned by the user; (c) keep a placeholder namespace until legal/store check.
+- **Chosen approach:** Option (c) for scaffolding only. Final namespace still deferred to the naming audit.
+- **Reason:** Renaming package/applicationId later is expensive; a wrong early choice cannot be cheaply undone once published. Rename cost is itemised in `docs/architecture/DECISIONS.md` ADR-004.
+- **Trade-offs:** Every Kotlin file and the manifest carry the placeholder package until renamed. Cost rises with each feature added.
+- **Affected modules:** `settings.gradle.kts`, `app/build.gradle.kts`, `core/data/build.gradle.kts`, all Kotlin packages under `app/` and `core/`.
+- **Verification:** Naming audit still pending. Gradle configuration not verified (no network; see PROJECT_STATUS).
+
+## D-003 — Three-agent structure preserved
+- **Date:** 2026-11-24
+- **Decision:** Keep the three specialist agents exactly as defined in MASTER_HANDOVER §2.
+- **Reason:** User instruction: continue original structure, do not restart.
+- **Affected modules:** all.
+- **Verification:** Agents spawned in this session (see PROJECT_STATUS).
+
+## D-004 — Repository attachment blocked
+- **Date:** 2026-11-24
+- **Decision:** Work proceeds in a local workspace at `/home/claude/hush` (git initialised, no remote) until GitHub is re-authenticated and `somilkhan/Hush` is attached.
+- **Context:** `add_repo` returned "link your GitHub account"; GitHub connector later reported sign-in needed.
+- **Trade-offs:** Local commits must be pushed to the real repo later; no remote history exists locally.
+- **Verification:** Pending user sign-in.
+
+## D-005 — Initial module layout (Agent 2)
+- **Date:** 2026-11-24
+- **Decision:** Create `:app`, `:core:domain` (pure Kotlin/JVM) and `:core:data` (Android library) now. Reserve `:core:compat` (Agent 1), `:core:player`, `:core:designsystem` and `:feature:*` for their owners to create when they have real code. Manual DI via `AppContainer`, no DI framework.
+- **Context:** Handover §5 asks for foundations before parallel build-out.
+- **Options considered:** Single module; full multi-module upfront; the chosen split.
+- **Chosen approach:** Minimal boundaries that matter now (domain purity, data separation, app as composition root).
+- **Reason:** Enforces the rule that UI and domain never import compat internals.
+- **Trade-offs:** Later module splits cost refactoring time.
+- **Affected modules:** all Gradle modules; see `docs/architecture/ARCHITECTURE.md`.
+- **Verification:** Structure written. Build NOT verified (no network, no Android SDK). Wrapper not generated.
+
+## D-006 — Build status recorded as UNVERIFIED
+- **Date:** 2026-11-24
+- **Decision:** The Gradle skeleton is not claimed to build. Versions in `gradle/libs.versions.toml` are provisional.
+- **Context:** Egress proxy blocks Google Maven, Maven Central and Gradle distribution; Android SDK absent.
+- **Options considered:** Claim success from file presence (rejected); copy a wrapper jar from another clone (rejected: third-party code not checked for licence).
+- **Chosen approach:** Mark UNVERIFIED in PROJECT_STATUS; build when network and SDK exist.
+- **Reason:** CLAUDE.md rule 3.
+- **Trade-offs:** No compile evidence yet.
+- **Affected modules:** all Gradle modules.
+- **Verification:** `gradle projects` attempted with system Gradle 8.14.3, failed at plugin resolution (HTTP 403).
