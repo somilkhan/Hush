@@ -71,3 +71,14 @@ Format per MASTER_HANDOVER §4.
 - **Trade-offs:** Any copied or derived CloudStream code must keep copyright notices and be attributed. Extension API compatibility (`com.lagradost.cloudstream3.*` names) must still be reviewed for licence and attribution before implementation.
 - **Affected modules:** `LICENSE`, all source files (headers to be added when real code exists), docs/reverse-engineering/LICENSING_AUDIT.md.
 - **Verification:** `LICENSE` text copied from system GPL-3 file (Debian common-licenses). Attribution list not yet written.
+
+## D-008 — Architecture drivers and forks (software-architecture interview, 2026-11-25)
+- **Date:** 2026-11-25
+- **Decision:** Sideload APK only; no backend and no accounts; offline downloads in scope now (ADR-019 PROPOSED, WorkManager + Room index); manual device testing is the acceptance gate; provider failure isolation per call (ADR-018).
+- **Context:** No SRS exists, so the fallback interview ran. Owner answers recorded in `docs/architecture/SOFTWARE_ARCHITECTURE.md`.
+- **Options considered:** Full list of forks and options is in that document (sections 5, ADR-018 to ADR-022).
+- **Chosen approach:** As listed above.
+- **Reason:** Owner's answers to four questions; privacy and local control are the top drivers.
+- **Trade-offs:** Offline downloads widen the first slice and raise a legal question for the owner. Manual-only testing means regressions are caught by the owner, not by CI.
+- **Affected modules:** `:core:download` (new, not yet created), `:core:data`, `:app`, `.github/workflows/android.yml` (release build later).
+- **Verification:** Document review only. No code verifies these choices yet.
