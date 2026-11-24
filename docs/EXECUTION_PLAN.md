@@ -39,6 +39,7 @@
 - **M5 Design system code:** tokens, theme, glass component with fallbacks. Screenshot check on emulator or device.
 - **M6 Vertical slice:** repo add, extension load, search, details, episodes, stream, playback. Only after the M3 gate.
 - **M7 Quality and release:** tests, accessibility (TalkBack, font scale, contrast), performance profile, attribution file.
+  - Add `NOTICE` with copyright holder line, GPL-3.0 reference and the source of the screen structure (NuvioMobile-Enhanced, owner's fork). Required before any public release (D-009).
 
 ## 6. Verification and review
 - No feature is "done" without evidence: build output, test output, or device/emulator run. Name which one.
