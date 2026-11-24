@@ -1,6 +1,12 @@
 package app.hush.placeholder.ui.details
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.draw.clip
+import app.hush.placeholder.design.HushShapes
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -78,6 +84,22 @@ private fun DetailsContent(media: MediaItem, onPlay: (String) -> Unit) {
     ) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(HushSpacing.s8)) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(16f / 9f)
+                        .clip(HushShapes.l)
+                        .background(colors.surfaceRaised),
+                    contentAlignment = Alignment.BottomStart,
+                ) {
+                    Text(
+                        text = media.title.firstOrNull()?.uppercase() ?: "",
+                        style = MaterialTheme.typography.displayLarge,
+                        color = colors.labelTertiary,
+                        modifier = Modifier.padding(HushSpacing.s16),
+                    )
+                    if (media.isDemo) DemoBadge(modifier = Modifier.align(Alignment.TopStart).padding(HushSpacing.s12))
+                }
                 if (media.isDemo) DemoBadge()
                 Text(
                     text = media.title,

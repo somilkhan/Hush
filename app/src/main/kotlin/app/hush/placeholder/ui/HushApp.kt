@@ -56,7 +56,7 @@ fun HushApp(mediaRepository: MediaRepository) {
                     GlassTopBar(title = tab.title)
                     Box(Modifier.weight(1f)) {
                         when (tab) {
-                            HushTab.HOME -> HomeScreen(repository = mediaRepository, onOpen = { detailId = it })
+                            HushTab.HOME -> HomeScreen(repository = mediaRepository, onOpen = { detailId = it }, onPlay = { playUrl = it })
                             HushTab.SEARCH -> SearchScreen(repository = mediaRepository, onOpen = { detailId = it })
                             HushTab.LIBRARY -> LibraryScreen()
                         }

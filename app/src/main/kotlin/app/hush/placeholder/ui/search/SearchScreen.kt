@@ -1,6 +1,7 @@
 package app.hush.placeholder.ui.search
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
@@ -8,8 +9,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.OutlinedTextField
@@ -18,12 +20,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.hush.placeholder.core.domain.repository.MediaRepository
 import app.hush.placeholder.design.HushSpacing
 import app.hush.placeholder.ui.common.LoadingRows
-import app.hush.placeholder.ui.common.MediaListItem
+import app.hush.placeholder.ui.common.PosterCard
 import app.hush.placeholder.ui.common.StateMessage
 import app.hush.placeholder.ui.common.viewModelFactoryOf
 
@@ -62,11 +65,15 @@ fun SearchScreen(repository: MediaRepository, onOpen: (String) -> Unit) {
                 actionLabel = "Retry",
                 onAction = vm::retry,
             )
-            is SearchStatus.Results -> LazyColumn(
+            is SearchStatus.Results -> LazyVerticalGrid(
+                columns = GridCells.Adaptive(minSize = 150.dp),
+                modifier = Modifier.weight(1f),
                 contentPadding = PaddingValues(vertical = HushSpacing.s8),
+                horizontalArrangement = Arrangement.spacedBy(HushSpacing.s12),
+                verticalArrangement = Arrangement.spacedBy(HushSpacing.s16),
             ) {
                 items(status.items, key = { it.id }) { media ->
-                    MediaListItem(item = media, onOpen = onOpen)
+                    PosterCard(item = media, onOpen = onOpen)
                 }
             }
         }
