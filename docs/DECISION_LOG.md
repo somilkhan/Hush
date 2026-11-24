@@ -93,3 +93,13 @@ Format per MASTER_HANDOVER §4.
 - **Affected modules:** `app/.../ui/` (HushApp, Home, Search, Details, Library, PosterCard, HeroBanner).
 - **Verification:** CI `:app:assembleDebug` green on run 45480169532. Not yet tested on device.
 - **Open:** Whether to add an attribution line in a NOTICE file for the source of the structure. Owner has not decided.
+
+## D-010 — Backend approved: Supabase, email and password, sync-ready design
+- **Date:** 2026-11-25
+- **Decision:** Owner approved a backend now, not later. Supabase with email and password login. Sync covers library, addons and plugins (the same scope Nuvio uses). Supabase project is owned by the owner; the Nuvio fallback URL is not used. Supersedes ADR-021 ("no backend, no accounts") for the account and sync scope; downloads stay device-local.
+- **Context:** Owner said rewriting later would cost more, so the data layer is built sync-ready now (repository interfaces with local and remote adapters).
+- **Options considered:** Backend in a separate milestone (recommended by Claude, not chosen); backend now (chosen).
+- **Reason:** Owner's decision, with the reason that a later rewrite is more expensive.
+- **Trade-offs:** Adds auth, a server schema, Row Level Security, and privacy duties. Client holds only the anon key; RLS must be enabled on every table before any release.
+- **Affected modules:** `:core:data` (remote adapter), `:core:domain` (repository interfaces), `:app` (auth gate), new `supabase/` schema folder.
+- **Verification:** Not yet. Waiting for owner to provide project URL and anon key (kept in `local.properties`, never committed).
