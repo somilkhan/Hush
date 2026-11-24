@@ -82,3 +82,14 @@ Format per MASTER_HANDOVER §4.
 - **Trade-offs:** Offline downloads widen the first slice and raise a legal question for the owner. Manual-only testing means regressions are caught by the owner, not by CI.
 - **Affected modules:** `:core:download` (new, not yet created), `:core:data`, `:app`, `.github/workflows/android.yml` (release build later).
 - **Verification:** Document review only. No code verifies these choices yet.
+
+## D-009 — Screen structure modelled on owner's NuvioMobile-Enhanced fork
+- **Date:** 2026-11-25
+- **Decision:** Home, Search, Details and Library screen structure follows the layout of the owner's public fork `luqmanfadlli/NuvioMobile-Enhanced` (GPL-3.0). HUSH's own palette, tokens and naming are kept.
+- **Context:** Owner asked for the same screen structure and confirmed the fork is their own ("mera").
+- **Options considered:** Copy code (rejected); reimplement the structure from the public source (chosen); use a generic layout (rejected by owner).
+- **Reason:** Owner's direction. No code, artwork or logos were copied. Nuvio logos and wordmark are not used.
+- **Trade-offs:** Structure only. Visuals were not matched because the screenshots were not readable. Posters are tonal placeholders labelled DEMO until artwork exists.
+- **Affected modules:** `app/.../ui/` (HushApp, Home, Search, Details, Library, PosterCard, HeroBanner).
+- **Verification:** CI `:app:assembleDebug` green on run 45480169532. Not yet tested on device.
+- **Open:** Whether to add an attribution line in a NOTICE file for the source of the structure. Owner has not decided.
