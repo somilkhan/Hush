@@ -3,33 +3,18 @@ package app.hush.placeholder
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import app.hush.placeholder.ui.HushApp
 
-// Skeleton only. Real screens, theme and navigation are owned by Agent 3 (UI) and Agent 2 (host wiring).
-// Contains no data and no fake content.
+// Composition root. The UI (HushApp, theme, navigation) is owned by Agent 3 in ui/.
+// HushApp(mediaRepository: MediaRepository) is the agreed call. UNVERIFIED until ui/HushApp.kt exists.
 class MainActivity : ComponentActivity() {
+
+    private val container: AppContainer by lazy { AppContainer(this) }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MaterialTheme {
-                SkeletonPlaceholder()
-            }
-        }
-    }
-}
-
-@Composable
-private fun SkeletonPlaceholder() {
-    Surface(modifier = Modifier.fillMaxSize()) {
-        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-            Text(text = "HUSH skeleton (placeholder namespace)")
+            HushApp(mediaRepository = container.mediaRepository)
         }
     }
 }

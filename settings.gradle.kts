@@ -22,3 +22,4 @@ rootProject.name = "hush"
 include(":app")
 include(":core:domain")
 include(":core:data")
+include(":core:player")

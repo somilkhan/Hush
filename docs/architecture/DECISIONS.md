@@ -128,6 +128,15 @@ Authoritative project log: `docs/DECISION_LOG.md`. This file records architectur
 - **Affected modules:** `:core:domain` (Section), `:core:compat`, `:feature:*` (Agent 3).
 - **Verification:** None (no code yet). DOMAIN_MODEL §2 still needs this change.
 
+## ADR-017 — Vertical-slice contract (demo catalogue, Media3 player)
+- **Date:** 2026-11-24
+- **Status:** PROPOSED. Scope is the playable vertical slice only. Not the compat contract.
+- **Context:** The owner needs a playable build to try on a phone. The compat contracts (INTEGRATION_CONTRACTS) are not agreed, so no CloudStream data can be shown yet.
+- **Decision:** A small slice contract in `:core:domain` (`MediaKind {MOVIE, SERIES}`, `StreamSource`, `Episode`, `MediaItem`, `MediaRepository`). `:core:data` provides `DemoMediaRepository`, a static catalogue with `isDemo = true` and a public Google test stream. `:core:player` provides `HushVideoPlayer` on Media3.
+- **Deviation from DOMAIN_MODEL:** `MediaKind` has only MOVIE and SERIES (no ANIME or OTHER), and `MediaItem`/`Episode`/`StreamSource` use the flat shape of the brief, not `MediaRef`/`MediaSummary`/`MediaDetails`. The slice shape must be mapped to the DOMAIN_MODEL shape before compat lands. Recorded here so it is not mistaken for the agreed model.
+- **Versions:** Media3 1.5.1 and Lifecycle 2.8.7 are UNVERIFIED (no Google Maven access in this environment).
+- **Verification:** Read-through only. Unit tests in `:core:data` are NOT RUN. The build is NOT VERIFIED.
+
 ## Open decisions (not yet recorded in DECISION_LOG)
 - Minimum SDK (26 provisional). Waiting on Agent 1.
 - Whether extensions need a specific HTTP client or cookie store.
