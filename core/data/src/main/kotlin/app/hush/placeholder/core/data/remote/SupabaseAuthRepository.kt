@@ -28,12 +28,20 @@ class SupabaseAuthRepository(
     private val prefs = context.getSharedPreferences("hush_auth", Context.MODE_PRIVATE)
     private val jsonType = "application/json; charset=utf-8".toMediaType()
 
-    private val configured: Boolean get() = baseUrl.isNotBlank() && publishableKey.isNotBlank()
+    private val configured: Boolean get() =
+        baseUrl.startsWith("https://") && publishableKey.isNotBlank()
 
     override suspend fun currentSession(): Session? = withContext(Dispatchers.IO) {
         val stored = readStored() ?: return@withContext null
         if (stored.expiresAtEpochSec - nowSec() > 60) return@withContext stored.toSession()
-        refresh(stored.refreshToken).getOrNull()
+        val result = refresh(stored.refreshToken)
+        result.getOrNull() ?: run {
+            // Only a real rejection (400/401) ends the session. Network errors keep tokens for the next try.
+            if ((result.exceptionOrNull() as? AuthRejectedException) != null) {
+                prefs.edit().clear().apply()
+            }
+            null
+        }
     }
 
     override suspend fun signIn(email: String, password: String): Result<Session> = withContext(Dispatchers.IO) {
@@ -82,6 +90,7 @@ class SupabaseAuthRepository(
                     .ifBlank { json.optString("msg") }
                     .ifBlank { json.optString("message") }
                     .ifBlank { "Request failed (${response.code})" }
+                if (response.code == 400 || response.code == 401) throw AuthRejectedException(message)
                 error(message)
             }
             json
@@ -126,6 +135,9 @@ class SupabaseAuthRepository(
         Result.failure(IllegalStateException("Sync is not configured in this build."))
 
     private fun nowSec(): Long = System.currentTimeMillis() / 1000
+
+    /** The server rejected the credentials or refresh token. */
+    class AuthRejectedException(message: String) : IllegalStateException(message)
 
     private data class StoredSession(
         val accessToken: String,
