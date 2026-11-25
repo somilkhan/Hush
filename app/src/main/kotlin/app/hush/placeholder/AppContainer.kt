@@ -1,7 +1,7 @@
 package app.hush.placeholder
 
 import android.content.Context
-import app.hush.placeholder.core.data.DemoMediaRepository
+import app.hush.placeholder.core.data.EmptyMediaRepository
 import app.hush.placeholder.core.data.LocalLibraryRepository
 import app.hush.placeholder.core.data.LocalWatchHistoryRepository
 import app.hush.placeholder.core.data.addon.AddonMediaRepository
@@ -30,7 +30,7 @@ class AppContainer(context: Context) {
     val mediaRepository: MediaRepository = AddonMediaRepository(
         registry = addonRegistry,
         client = stremioClient,
-        fallback = DemoMediaRepository(),
+        fallback = EmptyMediaRepository(),
     )
 
     val authRepository: AuthRepository = SupabaseAuthRepository(

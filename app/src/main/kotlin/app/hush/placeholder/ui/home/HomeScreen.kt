@@ -60,7 +60,7 @@ fun HomeScreen(
         HomeUiState.Loading -> LoadingRows(description = "Loading featured titles")
         HomeUiState.Empty -> StateMessage(
             title = "Nothing featured",
-            body = "No titles came back. Check your sources in Library.",
+            body = "No titles yet. Add an addon in Settings, under Sources.",
         )
         HomeUiState.Error -> StateMessage(
             title = "Could not load",
