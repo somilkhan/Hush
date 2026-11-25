@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.hush.placeholder.core.domain.model.MediaItem
@@ -73,7 +74,7 @@ fun DetailsScreen(
             DetailsUiState.Loading -> LoadingRows(description = "Loading details")
             DetailsUiState.NotFound -> StateMessage(
                 title = "Not found",
-                body = "This title is no longer in the demo catalogue.",
+                body = "This title is no longer available from your sources.",
                 actionLabel = "Back",
                 onAction = onBack,
             )
@@ -158,24 +159,30 @@ private fun DetailsContent(
         }
         items(visible, key = { it.id }) { episode ->
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(HushShapes.m)
+                    .background(colors.surfaceRaised)
+                    .padding(HushSpacing.s12),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(HushSpacing.s12),
             ) {
-                Column(Modifier.weight(1f)) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(HushSpacing.s4)) {
                     Text(
                         text = if (media.kind == MediaKind.MOVIE) {
                             "Movie"
                         } else {
                             "Season ${episode.season} · Episode ${episode.number}"
                         },
-                        style = MaterialTheme.typography.labelLarge,
+                        style = MaterialTheme.typography.labelMedium,
                         color = colors.labelSecondary,
                     )
                     Text(
                         text = episode.title,
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = MaterialTheme.typography.titleMedium,
                         color = colors.label,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
                 Button(

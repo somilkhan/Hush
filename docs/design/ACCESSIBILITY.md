@@ -100,6 +100,9 @@ Rules:
 
 - Every action reachable by touch is reachable by keyboard or D-pad, including sheets, the player and the seek bar.
 - Focus ring is always visible on focused elements (DESIGN_SYSTEM §5.4).
+  - Implemented in `ui/common/HushComponents.kt` as `Modifier.focusRing(focused, shape, accent)`: a 2dp accent border, drawn only while the element has focus. Applied to `PosterCard`, `MediaListItem` and the bottom-bar tabs. UNVERIFIED on device; CI compile only.
+  - Open: 3dp at 100% font scale (DESIGN_SYSTEM §5.4) is not yet wired to a scale value.
+- Loading rows are static skeletons with no shimmer, so reduced motion has nothing to disable in the search and details screens.
 - Player shortcuts for external keyboards: Space play/pause, arrows seek 10 seconds, Shift+arrows 60 seconds, F fullscreen, M mute, C subtitles.
 - D-pad navigation on Android TV is out of scope for this phase; no screen should block it structurally.
 
