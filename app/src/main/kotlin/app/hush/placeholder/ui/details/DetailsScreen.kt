@@ -79,7 +79,7 @@ fun DetailsScreen(
                 actionLabel = "Retry",
                 onAction = vm::load,
             )
-            is DetailsUiState.Loaded -> DetailsContent(media = s.item, library = library, onPlay = onPlay)
+            is DetailsUiState.Loaded -> DetailsContent(media = s.item, repository = repository, library = library, onPlay = onPlay)
         }
     }
 }
@@ -87,10 +87,12 @@ fun DetailsScreen(
 @Composable
 private fun DetailsContent(
     media: MediaItem,
+    repository: MediaRepository,
     library: LibraryRepository,
     onPlay: (String) -> Unit,
 ) {
     val colors = HushTokens.colors
+    val scope = rememberCoroutineScope()
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = HushSpacing.gutter, vertical = HushSpacing.s16),
@@ -134,7 +136,6 @@ private fun DetailsContent(
             }
         }
         items(media.episodes, key = { it.id }) { episode ->
-            val url = episode.streams.firstOrNull()?.url
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -157,8 +158,11 @@ private fun DetailsContent(
                     )
                 }
                 Button(
-                    onClick = { url?.let(onPlay) },
-                    enabled = url != null,
+                    onClick = {
+                        scope.launch {
+                            repository.streams(media, episode.id).firstOrNull()?.let { onPlay(it.url) }
+                        }
+                    },
                     modifier = Modifier.defaultMinSize(minWidth = HushSpacing.minTouch, minHeight = HushSpacing.minTouch),
                 ) {
                     Text("Play")

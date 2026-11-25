@@ -1,16 +1,18 @@
 package app.hush.placeholder.core.player
 
-import android.view.ViewGroup
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -27,12 +29,11 @@ import androidx.media3.ui.PlayerView
 /**
  * Plays one progressive or HLS/DASH URL with Media3.
  *
- * - Playback starts as soon as the composable is shown.
+ * - The ExoPlayer is created inside a DisposableEffect keyed by [url], so it is released exactly once per URL.
  * - Pauses on ON_PAUSE and resumes on ON_RESUME only if it was playing before.
- * - The player is released when the composable leaves composition or [url] changes.
  * - [onBack] is called from the on-screen Back control and from the system back gesture.
  *
- * UNVERIFIED: not built or run in this environment. First verification is CI plus a device run.
+ * UNVERIFIED: not run on a device yet. Build is verified by CI only.
  */
 @Composable
 fun HushVideoPlayer(
@@ -42,30 +43,31 @@ fun HushVideoPlayer(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    var player by remember { mutableStateOf<ExoPlayer?>(null) }
 
-    val player = remember(url) {
-        ExoPlayer.Builder(context).build().apply {
+    DisposableEffect(url) {
+        val created = ExoPlayer.Builder(context).build().apply {
             setMediaItem(MediaItem.fromUri(url))
             prepare()
             playWhenReady = true
         }
+        player = created
+        onDispose {
+            player = null
+            created.release()
+        }
     }
 
-    DisposableEffect(player) {
-        onDispose { player.release() }
-    }
-
-    DisposableEffect(lifecycleOwner, player) {
+    DisposableEffect(lifecycleOwner, url) {
         var wasPlaying = false
         val observer = LifecycleEventObserver { _, event ->
+            val p = player ?: return@LifecycleEventObserver
             when (event) {
                 Lifecycle.Event.ON_PAUSE -> {
-                    wasPlaying = player.playWhenReady
-                    player.pause()
+                    wasPlaying = p.playWhenReady
+                    p.pause()
                 }
-                Lifecycle.Event.ON_RESUME -> {
-                    if (wasPlaying) player.play()
-                }
+                Lifecycle.Event.ON_RESUME -> if (wasPlaying) p.play()
                 else -> Unit
             }
         }
@@ -78,16 +80,7 @@ fun HushVideoPlayer(
     Box(modifier = modifier.fillMaxSize().background(Color.Black)) {
         AndroidView(
             modifier = Modifier.fillMaxSize(),
-            factory = { ctx ->
-                PlayerView(ctx).apply {
-                    layoutParams = ViewGroup.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                    )
-                    useController = true
-                    this.player = player
-                }
-            },
+            factory = { ctx -> PlayerView(ctx).apply { useController = true } },
             update = { view -> view.player = player },
         )
 

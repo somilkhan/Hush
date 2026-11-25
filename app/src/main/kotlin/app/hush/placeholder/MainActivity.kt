@@ -17,6 +17,7 @@ class MainActivity : ComponentActivity() {
                 mediaRepository = container.mediaRepository,
                 authRepository = container.authRepository,
                 libraryRepository = container.libraryRepository,
+                addonRegistry = container.addonRegistry,
                 guestStore = container.guestStore,
             )
         }

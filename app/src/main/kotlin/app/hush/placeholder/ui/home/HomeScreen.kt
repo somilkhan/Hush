@@ -30,8 +30,9 @@ fun HomeScreen(
     repository: MediaRepository,
     onOpen: (String) -> Unit,
     onPlay: (String) -> Unit,
+    refreshKey: Int = 0,
 ) {
-    val vm: HomeViewModel = viewModel(factory = viewModelFactoryOf { HomeViewModel(repository) })
+    val vm: HomeViewModel = viewModel(key = "home-$refreshKey", factory = viewModelFactoryOf { HomeViewModel(repository) })
     val state by vm.uiState.collectAsStateWithLifecycle()
 
     when (val s = state) {

@@ -51,6 +51,7 @@ fun LibraryScreen(
     onOpen: (String) -> Unit,
     onSignIn: () -> Unit,
     onSignedOut: () -> Unit,
+    onManageSources: () -> Unit,
 ) {
     val colors = HushTokens.colors
     val scope = rememberCoroutineScope()
@@ -104,6 +105,11 @@ fun LibraryScreen(
                 ) { Text("Sign in") }
             }
         }
+
+        OutlinedButton(
+            onClick = onManageSources,
+            modifier = Modifier.defaultMinSize(minHeight = HushSpacing.minTouch),
+        ) { Text("Manage sources") }
 
         when {
             !loaded -> Text("Loading your library", style = MaterialTheme.typography.bodyMedium, color = colors.labelSecondary)

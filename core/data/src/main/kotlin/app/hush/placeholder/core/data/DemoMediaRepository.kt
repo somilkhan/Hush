@@ -103,4 +103,7 @@ class DemoMediaRepository : MediaRepository {
             isDemo = true,
         )
     }
+
+    override suspend fun streams(item: MediaItem, episodeId: String): List<StreamSource> =
+        item.episodes.firstOrNull { it.id == episodeId }?.streams ?: emptyList()
 }
