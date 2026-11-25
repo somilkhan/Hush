@@ -41,6 +41,23 @@ class SupabaseAuthRepository(
         }
     }
 
+    /**
+     * User id and a fresh access token for remote sync. Refreshes near expiry. Null when signed out
+     * or when the refresh was rejected. The token is never logged.
+     */
+    suspend fun authorizedSession(): AuthorizedSession? = withContext(Dispatchers.IO) {
+        val stored = readStored() ?: return@withContext null
+        if (stored.expiresAtEpochSec - nowSec() <= 60) {
+            if (!configured) return@withContext null
+            val result = refresh(stored.refreshToken)
+            if (result.isFailure) {
+                if (result.exceptionOrNull() is AuthRejectedException) store.clear()
+                return@withContext null
+            }
+        }
+        readStored()?.let { AuthorizedSession(userId = it.userId, accessToken = it.accessToken) }
+    }
+
     override suspend fun signIn(email: String, password: String): Result<Session> = withContext(Dispatchers.IO) {
         if (!configured) return@withContext notConfigured()
         val body = JSONObject().put("email", email).put("password", password)
