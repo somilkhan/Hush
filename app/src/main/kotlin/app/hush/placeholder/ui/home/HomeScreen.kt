@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -30,6 +29,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import app.hush.placeholder.core.domain.model.MediaItem
 import app.hush.placeholder.core.domain.repository.MediaRepository
 import app.hush.placeholder.core.domain.sync.WatchEntry
 import app.hush.placeholder.design.HushShapes
@@ -42,7 +42,7 @@ import app.hush.placeholder.ui.common.StateMessage
 import app.hush.placeholder.ui.common.viewModelFactoryOf
 
 /**
- * Home: hero, Continue watching (local history), then the featured grid.
+ * Home: hero, Continue watching (local history), then horizontal poster rails.
  * The hero opens Details, where episode streams are resolved on demand.
  */
 @Composable
@@ -59,8 +59,8 @@ fun HomeScreen(
     when (val s = state) {
         HomeUiState.Loading -> LoadingRows(description = "Loading featured titles")
         HomeUiState.Empty -> StateMessage(
-            title = "Nothing featured",
-            body = "No titles yet. Add an addon in Settings, under Sources.",
+            title = "No titles yet",
+            body = "Add an addon in Settings, under Sources.",
         )
         HomeUiState.Error -> StateMessage(
             title = "Could not load",
@@ -79,7 +79,7 @@ fun HomeScreen(
                     vertical = HushSpacing.s16,
                 ),
                 horizontalArrangement = Arrangement.spacedBy(HushSpacing.s12),
-                verticalArrangement = Arrangement.spacedBy(HushSpacing.s16),
+                verticalArrangement = Arrangement.spacedBy(HushSpacing.s24),
             ) {
                 item(span = { GridItemSpan(maxLineSpan) }) {
                     HeroBanner(item = hero, onPlay = { onOpen(hero.id) }, onOpen = onOpen)
@@ -91,17 +91,31 @@ fun HomeScreen(
                 }
                 if (rest.isNotEmpty()) {
                     item(span = { GridItemSpan(maxLineSpan) }) {
-                        Text(
-                            text = "More titles",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = HushTokens.colors.label,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    }
-                    items(rest, key = { it.id }) { media ->
-                        PosterCard(item = media, onOpen = onOpen)
+                        PosterRail(title = "More titles", items = rest, onOpen = onOpen)
                     }
                 }
+            }
+        }
+    }
+}
+
+/** Horizontal rail of poster tiles. Swipe to scroll; each tile is a 48dp+ target. */
+@Composable
+private fun PosterRail(title: String, items: List<MediaItem>, onOpen: (String) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(HushSpacing.s8)) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            color = HushTokens.colors.label,
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(HushSpacing.s12),
+        ) {
+            items.forEach { media ->
+                PosterCard(item = media, onOpen = onOpen, modifier = Modifier.width(140.dp))
             }
         }
     }
