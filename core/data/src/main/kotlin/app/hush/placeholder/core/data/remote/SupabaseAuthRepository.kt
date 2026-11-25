@@ -13,10 +13,8 @@ import org.json.JSONObject
 
 /**
  * Email and password accounts against Supabase Auth (GoTrue REST).
- * Uses only the publishable key. Never the service role key.
- *
- * Known gap: session tokens are stored in private SharedPreferences, which is not encrypted.
- * Move to encrypted storage before any public release (see DECISION_LOG D-010).
+ * Uses only the publishable key, never the service role key. Requires an https base URL.
+ * Tokens are stored encrypted with a Keystore key (SecureTokenStore).
  */
 class SupabaseAuthRepository(
     context: Context,
@@ -25,21 +23,20 @@ class SupabaseAuthRepository(
     private val http: OkHttpClient = OkHttpClient(),
 ) : AuthRepository {
 
-    private val prefs = context.getSharedPreferences("hush_auth", Context.MODE_PRIVATE)
+    private val store = SecureTokenStore(context)
     private val jsonType = "application/json; charset=utf-8".toMediaType()
 
-    private val configured: Boolean get() =
-        baseUrl.startsWith("https://") && publishableKey.isNotBlank()
+    private val configured: Boolean
+        get() = baseUrl.startsWith("https://") && publishableKey.isNotBlank()
 
     override suspend fun currentSession(): Session? = withContext(Dispatchers.IO) {
         val stored = readStored() ?: return@withContext null
         if (stored.expiresAtEpochSec - nowSec() > 60) return@withContext stored.toSession()
+        if (!configured) return@withContext null
         val result = refresh(stored.refreshToken)
         result.getOrNull() ?: run {
             // Only a real rejection (400/401) ends the session. Network errors keep tokens for the next try.
-            if ((result.exceptionOrNull() as? AuthRejectedException) != null) {
-                prefs.edit().clear().apply()
-            }
+            if (result.exceptionOrNull() is AuthRejectedException) store.clear()
             null
         }
     }
@@ -55,7 +52,7 @@ class SupabaseAuthRepository(
     override suspend fun signUp(email: String, password: String): Result<Session?> = withContext(Dispatchers.IO) {
         if (!configured) return@withContext notConfigured()
         val body = JSONObject().put("email", email).put("password", password)
-        // With email confirmation on, Supabase returns no session. Caller must tell the user to confirm.
+        // With email confirmation on, Supabase returns no session. The UI must ask the user to confirm.
         post("/auth/v1/signup", body).map { json -> storeSession(json) }
     }
 
@@ -65,7 +62,7 @@ class SupabaseAuthRepository(
             // Best effort. Local state is cleared even if the server call fails.
             post("/auth/v1/logout", JSONObject(), bearer = stored.accessToken)
         }
-        prefs.edit().clear().apply()
+        store.clear()
     }
 
     private fun refresh(refreshToken: String): Result<Session> {
@@ -109,25 +106,23 @@ class SupabaseAuthRepository(
             userId = user.getString("id"),
             email = user.optString("email"),
         )
-        prefs.edit()
-            .putString("access", stored.accessToken)
-            .putString("refresh", stored.refreshToken)
-            .putLong("expires", stored.expiresAtEpochSec)
-            .putString("user_id", stored.userId)
-            .putString("email", stored.email)
-            .apply()
+        store.put("access", stored.accessToken)
+        store.put("refresh", stored.refreshToken)
+        store.put("expires", stored.expiresAtEpochSec.toString())
+        store.put("user_id", stored.userId)
+        store.put("email", stored.email)
         return stored.toSession()
     }
 
     private fun readStored(): StoredSession? {
-        val access = prefs.getString("access", null) ?: return null
-        val userId = prefs.getString("user_id", null) ?: return null
+        val access = store.get("access") ?: return null
+        val userId = store.get("user_id") ?: return null
         return StoredSession(
             accessToken = access,
-            refreshToken = prefs.getString("refresh", "").orEmpty(),
-            expiresAtEpochSec = prefs.getLong("expires", 0L),
+            refreshToken = store.get("refresh").orEmpty(),
+            expiresAtEpochSec = store.get("expires")?.toLongOrNull() ?: 0L,
             userId = userId,
-            email = prefs.getString("email", "").orEmpty(),
+            email = store.get("email").orEmpty(),
         )
     }
 
