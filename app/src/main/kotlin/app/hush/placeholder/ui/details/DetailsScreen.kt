@@ -3,30 +3,38 @@ package app.hush.placeholder.ui.details
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.padding
-import androidx.compose.ui.draw.clip
-import app.hush.placeholder.design.HushShapes
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.hush.placeholder.core.domain.model.MediaItem
 import app.hush.placeholder.core.domain.model.MediaKind
 import app.hush.placeholder.core.domain.repository.MediaRepository
+import app.hush.placeholder.core.domain.sync.LibraryEntry
+import app.hush.placeholder.core.domain.sync.LibraryRepository
+import app.hush.placeholder.design.HushShapes
 import app.hush.placeholder.design.HushSpacing
 import app.hush.placeholder.design.HushTokens
 import app.hush.placeholder.ui.common.DemoBadge
@@ -36,10 +44,12 @@ import app.hush.placeholder.ui.common.LoadingRows
 import app.hush.placeholder.ui.common.StateMessage
 import app.hush.placeholder.ui.common.kindLabel
 import app.hush.placeholder.ui.common.viewModelFactoryOf
+import kotlinx.coroutines.launch
 
 @Composable
 fun DetailsScreen(
     repository: MediaRepository,
+    library: LibraryRepository,
     mediaId: String,
     onBack: () -> Unit,
     onPlay: (String) -> Unit,
@@ -69,13 +79,17 @@ fun DetailsScreen(
                 actionLabel = "Retry",
                 onAction = vm::load,
             )
-            is DetailsUiState.Loaded -> DetailsContent(media = s.item, onPlay = onPlay)
+            is DetailsUiState.Loaded -> DetailsContent(media = s.item, library = library, onPlay = onPlay)
         }
     }
 }
 
 @Composable
-private fun DetailsContent(media: MediaItem, onPlay: (String) -> Unit) {
+private fun DetailsContent(
+    media: MediaItem,
+    library: LibraryRepository,
+    onPlay: (String) -> Unit,
+) {
     val colors = HushTokens.colors
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -116,6 +130,7 @@ private fun DetailsContent(media: MediaItem, onPlay: (String) -> Unit) {
                     style = MaterialTheme.typography.bodyLarge,
                     color = colors.label,
                 )
+                SaveToggle(media = media, library = library)
             }
         }
         items(media.episodes, key = { it.id }) { episode ->
@@ -150,5 +165,48 @@ private fun DetailsContent(media: MediaItem, onPlay: (String) -> Unit) {
                 }
             }
         }
+    }
+}
+
+/** Adds or removes the title from the device library. Reads state once per open, writes on tap. */
+@Composable
+private fun SaveToggle(media: MediaItem, library: LibraryRepository) {
+    val scope = rememberCoroutineScope()
+    var saved by remember(media.id) { mutableStateOf(false) }
+    LaunchedEffect(media.id) {
+        saved = library.all().any { it.mediaId == media.id && it.saved }
+    }
+    val label = if (saved) "Saved" else "Save"
+    val onClick = {
+        scope.launch {
+            if (saved) {
+                library.remove(media.id)
+                saved = false
+            } else {
+                library.upsert(
+                    LibraryEntry(
+                        mediaId = media.id,
+                        kind = media.kind,
+                        title = media.title,
+                        posterUrl = null,
+                        saved = true,
+                        updatedAtEpochMs = System.currentTimeMillis(),
+                    ),
+                )
+                saved = true
+            }
+        }
+        Unit
+    }
+    if (saved) {
+        OutlinedButton(
+            onClick = onClick,
+            modifier = Modifier.defaultMinSize(minHeight = HushSpacing.minTouch),
+        ) { Text(label) }
+    } else {
+        Button(
+            onClick = onClick,
+            modifier = Modifier.defaultMinSize(minHeight = HushSpacing.minTouch),
+        ) { Text(label) }
     }
 }

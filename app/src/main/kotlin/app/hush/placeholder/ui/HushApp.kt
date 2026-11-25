@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import app.hush.placeholder.GuestStore
 import app.hush.placeholder.core.domain.account.AuthRepository
 import app.hush.placeholder.core.domain.repository.MediaRepository
+import app.hush.placeholder.core.domain.sync.LibraryRepository
 import app.hush.placeholder.core.player.HushVideoPlayer
 import app.hush.placeholder.design.HushTheme
 import app.hush.placeholder.design.HushTokens
@@ -38,6 +39,7 @@ private enum class Gate { CHECKING, LOGIN, MAIN }
 fun HushApp(
     mediaRepository: MediaRepository,
     authRepository: AuthRepository,
+    libraryRepository: LibraryRepository,
     guestStore: GuestStore,
 ) {
     HushTheme {
@@ -55,13 +57,31 @@ fun HushApp(
                     gate = Gate.MAIN
                 },
             )
-            Gate.MAIN -> AppShell(mediaRepository = mediaRepository)
+            Gate.MAIN -> AppShell(
+                mediaRepository = mediaRepository,
+                authRepository = authRepository,
+                libraryRepository = libraryRepository,
+                onSignIn = {
+                    guestStore.isGuest = false
+                    gate = Gate.LOGIN
+                },
+                onSignedOut = {
+                    guestStore.isGuest = false
+                    gate = Gate.LOGIN
+                },
+            )
         }
     }
 }
 
 @Composable
-private fun AppShell(mediaRepository: MediaRepository) {
+private fun AppShell(
+    mediaRepository: MediaRepository,
+    authRepository: AuthRepository,
+    libraryRepository: LibraryRepository,
+    onSignIn: () -> Unit,
+    onSignedOut: () -> Unit,
+) {
     var tab by rememberSaveable { mutableStateOf(HushTab.HOME) }
     var detailId by rememberSaveable { mutableStateOf<String?>(null) }
     var playUrl by rememberSaveable { mutableStateOf<String?>(null) }
@@ -80,6 +100,7 @@ private fun AppShell(mediaRepository: MediaRepository) {
             )
             id != null -> DetailsScreen(
                 repository = mediaRepository,
+                library = libraryRepository,
                 mediaId = id,
                 onBack = { detailId = null },
                 onPlay = { playUrl = it },
@@ -94,7 +115,13 @@ private fun AppShell(mediaRepository: MediaRepository) {
                             onPlay = { playUrl = it },
                         )
                         HushTab.SEARCH -> SearchScreen(repository = mediaRepository, onOpen = { detailId = it })
-                        HushTab.LIBRARY -> LibraryScreen()
+                        HushTab.LIBRARY -> LibraryScreen(
+                            library = libraryRepository,
+                            auth = authRepository,
+                            onOpen = { detailId = it },
+                            onSignIn = onSignIn,
+                            onSignedOut = onSignedOut,
+                        )
                     }
                 }
                 HushNavBar(selected = tab, onSelect = { tab = it })

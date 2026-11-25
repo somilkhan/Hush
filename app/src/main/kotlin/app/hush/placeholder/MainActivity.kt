@@ -16,6 +16,7 @@ class MainActivity : ComponentActivity() {
             HushApp(
                 mediaRepository = container.mediaRepository,
                 authRepository = container.authRepository,
+                libraryRepository = container.libraryRepository,
                 guestStore = container.guestStore,
             )
         }
