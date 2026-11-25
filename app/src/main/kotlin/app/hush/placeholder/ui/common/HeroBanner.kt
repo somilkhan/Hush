@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
@@ -17,6 +18,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import app.hush.placeholder.core.domain.model.MediaItem
 import app.hush.placeholder.design.HushShapes
@@ -24,8 +27,8 @@ import app.hush.placeholder.design.HushSpacing
 import app.hush.placeholder.design.HushTokens
 
 /**
- * Feature block for the Home screen: tonal backdrop, title block, and two actions.
- * Play uses the first stream of the first episode. Details opens the detail screen.
+ * Home hero. No artwork exists yet, so the backdrop is a tonal block that fades into the page
+ * canvas, keeping the title readable. Play and Details both open Details, where streams resolve.
  */
 @Composable
 fun HeroBanner(
@@ -35,7 +38,6 @@ fun HeroBanner(
     modifier: Modifier = Modifier,
 ) {
     val colors = HushTokens.colors
-    val playUrl = item.episodes.firstOrNull()?.streams?.firstOrNull()?.url
 
     Box(
         modifier = modifier
@@ -43,10 +45,20 @@ fun HeroBanner(
             .aspectRatio(16f / 11f)
             .clip(HushShapes.l)
             .background(colors.surfaceRaised),
-        contentAlignment = Alignment.BottomStart,
     ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(Color.Transparent, colors.canvas.copy(alpha = 0.7f), colors.canvas),
+                    ),
+                ),
+        )
         Column(
-            modifier = Modifier.padding(HushSpacing.gutter),
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(HushSpacing.gutter),
             verticalArrangement = Arrangement.spacedBy(HushSpacing.s8),
         ) {
             if (item.isDemo) DemoBadge()
@@ -71,8 +83,7 @@ fun HeroBanner(
             )
             Row(horizontalArrangement = Arrangement.spacedBy(HushSpacing.s8)) {
                 Button(
-                    onClick = { playUrl?.let(onPlay) },
-                    enabled = playUrl != null,
+                    onClick = { onPlay(item.id) },
                     modifier = Modifier.defaultMinSize(minWidth = HushSpacing.minTouch, minHeight = HushSpacing.minTouch),
                 ) {
                     Text("Play")

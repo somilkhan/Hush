@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -14,6 +15,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
@@ -24,7 +27,7 @@ import app.hush.placeholder.design.HushTokens
 
 /**
  * Portrait poster tile (2:3). No artwork exists in the contract yet, so the poster is a tonal
- * block with the title initial. It is never presented as real artwork.
+ * block with the title initial and a fade at the bottom. It is never presented as real artwork.
  */
 @Composable
 fun PosterCard(
@@ -48,6 +51,15 @@ fun PosterCard(
                 .background(colors.surfaceRaised),
             contentAlignment = Alignment.BottomStart,
         ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(Color.Transparent, colors.canvas.copy(alpha = 0.6f)),
+                        ),
+                    ),
+            )
             Text(
                 text = item.title.firstOrNull()?.uppercase() ?: "",
                 style = MaterialTheme.typography.displayMedium,
