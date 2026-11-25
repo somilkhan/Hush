@@ -33,6 +33,19 @@ jobs:
         with:
           gradle-version: '8.14.3'
 
+      - name: Write Supabase config from secrets
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_PUBLISHABLE_KEY" ]; then
+            echo "::warning::Supabase secrets are not set. Login and sync will show 'not configured'."
+          fi
+          {
+            echo "supabase.url=$SUPABASE_URL"
+            echo "supabase.publishableKey=$SUPABASE_PUBLISHABLE_KEY"
+          } > local.properties
+
       - name: Build debug APK
         run: gradle :app:assembleDebug --stacktrace --no-daemon
 
