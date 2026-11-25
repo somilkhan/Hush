@@ -103,3 +103,13 @@ Format per MASTER_HANDOVER §4.
 - **Trade-offs:** Adds auth, a server schema, Row Level Security, and privacy duties. Client holds only the anon key; RLS must be enabled on every table before any release.
 - **Affected modules:** `:core:data` (remote adapter), `:core:domain` (repository interfaces), `:app` (auth gate), new `supabase/` schema folder.
 - **Verification:** Not yet. Waiting for owner to provide project URL and anon key (kept in `local.properties`, never committed).
+
+## D-011 — Guest mode on the login screen (like NuvioMobile-Enhanced)
+- **Date:** 2026-11-25
+- **Decision:** Login screen offers "Continue as guest". Guest uses the app fully on device, with no account and no sync. A guest can sign in later, and local data is then offered for upload.
+- **Context:** Owner asked for guest login, following the Nuvio pattern.
+- **Options considered:** Login required (rejected); guest only, no sign-in (rejected); guest with later sign-in (chosen).
+- **Reason:** Owner's direction. Keeps the app usable without an account.
+- **Trade-offs:** Merging guest data into an account needs a clear rule (ask the user before upload; never overwrite server data silently).
+- **Affected modules:** `:app` login screen, `:core:data` local store, `SupabaseAuthRepository`.
+- **Verification:** Not yet. Build pending the login screen.
