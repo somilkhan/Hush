@@ -20,6 +20,8 @@ data class WatchEntry(
     val durationMs: Long,
     val completed: Boolean,
     val updatedAtEpochMs: Long,
+    /** Display title, so Continue watching works without loading the catalogue. */
+    val title: String = "",
 )
 
 /** Local-first store. The UI reads only from here; sync runs underneath. */

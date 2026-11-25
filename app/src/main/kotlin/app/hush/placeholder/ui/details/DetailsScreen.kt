@@ -52,7 +52,7 @@ fun DetailsScreen(
     library: LibraryRepository,
     mediaId: String,
     onBack: () -> Unit,
-    onPlay: (String) -> Unit,
+    onPlay: (PlayRequest) -> Unit,
 ) {
     val vm: DetailsViewModel = viewModel(
         key = "details-$mediaId",
@@ -89,7 +89,7 @@ private fun DetailsContent(
     media: MediaItem,
     repository: MediaRepository,
     library: LibraryRepository,
-    onPlay: (String) -> Unit,
+    onPlay: (PlayRequest) -> Unit,
 ) {
     val colors = HushTokens.colors
     val scope = rememberCoroutineScope()
@@ -160,7 +160,9 @@ private fun DetailsContent(
                 Button(
                     onClick = {
                         scope.launch {
-                            repository.streams(media, episode.id).firstOrNull()?.let { onPlay(it.url) }
+                            repository.streams(media, episode.id).firstOrNull()?.let {
+                                onPlay(PlayRequest(it.url, media.id, episode.id, media.title))
+                            }
                         }
                     },
                     modifier = Modifier.defaultMinSize(minWidth = HushSpacing.minTouch, minHeight = HushSpacing.minTouch),

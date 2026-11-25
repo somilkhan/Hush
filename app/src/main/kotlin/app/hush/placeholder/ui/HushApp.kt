@@ -18,6 +18,8 @@ import app.hush.placeholder.core.domain.account.AuthRepository
 import app.hush.placeholder.core.domain.addon.AddonRegistry
 import app.hush.placeholder.core.domain.repository.MediaRepository
 import app.hush.placeholder.core.domain.sync.LibraryRepository
+import app.hush.placeholder.core.domain.sync.WatchEntry
+import app.hush.placeholder.core.domain.sync.WatchHistoryRepository
 import app.hush.placeholder.core.player.HushVideoPlayer
 import app.hush.placeholder.design.HushTheme
 import app.hush.placeholder.design.HushTokens
@@ -25,13 +27,21 @@ import app.hush.placeholder.ui.common.GlassTopBar
 import app.hush.placeholder.ui.common.HushNavBar
 import app.hush.placeholder.ui.common.HushTab
 import app.hush.placeholder.ui.details.DetailsScreen
+import app.hush.placeholder.ui.details.PlayRequest
 import app.hush.placeholder.ui.home.HomeScreen
 import app.hush.placeholder.ui.library.LibraryScreen
 import app.hush.placeholder.ui.login.LoginScreen
 import app.hush.placeholder.ui.search.SearchScreen
 import app.hush.placeholder.ui.sources.SourcesScreen
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 private enum class Gate { CHECKING, LOGIN, MAIN }
+
+/** Watched fraction at which an episode counts as completed and leaves Continue watching. */
+private const val COMPLETE_FRACTION = 0.9
 
 /**
  * Root of the UI. Shows login until the user has a session or chooses guest.
@@ -42,6 +52,7 @@ fun HushApp(
     mediaRepository: MediaRepository,
     authRepository: AuthRepository,
     libraryRepository: LibraryRepository,
+    historyRepository: WatchHistoryRepository,
     addonRegistry: AddonRegistry,
     guestStore: GuestStore,
 ) {
@@ -64,6 +75,7 @@ fun HushApp(
                 mediaRepository = mediaRepository,
                 authRepository = authRepository,
                 libraryRepository = libraryRepository,
+                historyRepository = historyRepository,
                 addonRegistry = addonRegistry,
                 onSignIn = {
                     guestStore.isGuest = false
@@ -83,36 +95,64 @@ private fun AppShell(
     mediaRepository: MediaRepository,
     authRepository: AuthRepository,
     libraryRepository: LibraryRepository,
+    historyRepository: WatchHistoryRepository,
     addonRegistry: AddonRegistry,
     onSignIn: () -> Unit,
     onSignedOut: () -> Unit,
 ) {
     var tab by rememberSaveable { mutableStateOf(HushTab.HOME) }
     var detailId by rememberSaveable { mutableStateOf<String?>(null) }
-    var playUrl by rememberSaveable { mutableStateOf<String?>(null) }
     var sourcesOpen by rememberSaveable { mutableStateOf(false) }
     // Bumped when addons change, so Home reloads its catalogue.
     var catalogRev by rememberSaveable { mutableStateOf(0) }
+    var playing by remember { mutableStateOf<PlayRequest?>(null) }
+    var continueItems by remember { mutableStateOf<List<WatchEntry>>(emptyList()) }
+    // Progress is written after the player is released, so it outlives the composition.
+    val recordScope = remember { CoroutineScope(SupervisorJob() + Dispatchers.IO) }
 
-    BackHandler(enabled = playUrl != null) { playUrl = null }
-    BackHandler(enabled = playUrl == null && detailId != null) { detailId = null }
-    BackHandler(enabled = playUrl == null && detailId == null && sourcesOpen) { sourcesOpen = false }
+    LaunchedEffect(playing, catalogRev, tab, detailId) {
+        continueItems = historyRepository.all()
+            .filter { !it.completed && it.positionMs > 0 }
+            .groupBy { it.mediaId }
+            .values
+            .map { entries -> entries.maxBy { it.updatedAtEpochMs } }
+            .sortedByDescending { it.updatedAtEpochMs }
+    }
+
+    val request = playing
+    BackHandler(enabled = request != null) { playing = null }
+    BackHandler(enabled = request == null && detailId != null) { detailId = null }
+    BackHandler(enabled = request == null && detailId == null && sourcesOpen) { sourcesOpen = false }
 
     Box(Modifier.fillMaxSize().background(HushTokens.colors.canvas)) {
-        val url = playUrl
         val id = detailId
         when {
-            url != null -> HushVideoPlayer(
-                url = url,
+            request != null -> HushVideoPlayer(
+                url = request.url,
                 modifier = Modifier.fillMaxSize(),
-                onBack = { playUrl = null },
+                onBack = { playing = null },
+                onProgress = { positionMs, durationMs ->
+                    recordScope.launch {
+                        historyRepository.record(
+                            WatchEntry(
+                                mediaId = request.mediaId,
+                                episodeId = request.episodeId,
+                                positionMs = positionMs,
+                                durationMs = durationMs,
+                                completed = durationMs > 0 && positionMs >= durationMs * COMPLETE_FRACTION,
+                                updatedAtEpochMs = System.currentTimeMillis(),
+                                title = request.title,
+                            ),
+                        )
+                    }
+                },
             )
             id != null -> DetailsScreen(
                 repository = mediaRepository,
                 library = libraryRepository,
                 mediaId = id,
                 onBack = { detailId = null },
-                onPlay = { playUrl = it },
+                onPlay = { playing = it },
             )
             sourcesOpen -> SourcesScreen(
                 registry = addonRegistry,
@@ -125,8 +165,8 @@ private fun AppShell(
                     when (tab) {
                         HushTab.HOME -> HomeScreen(
                             repository = mediaRepository,
+                            continueWatching = continueItems,
                             onOpen = { detailId = it },
-                            onPlay = { playUrl = it },
                             refreshKey = catalogRev,
                         )
                         HushTab.SEARCH -> SearchScreen(repository = mediaRepository, onOpen = { detailId = it })
