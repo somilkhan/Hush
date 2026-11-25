@@ -36,6 +36,7 @@ android {
 dependencies {
     implementation(project(":core:domain"))
     implementation(project(":core:data"))
+    implementation(libs.okhttp)
     implementation(project(":core:player"))
     implementation(project(":design"))
     implementation(libs.androidx.lifecycle.runtime.compose)
