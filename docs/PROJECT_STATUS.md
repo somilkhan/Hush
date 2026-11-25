@@ -42,3 +42,24 @@ Last updated: 2026-11-24 (post-merge)
 2. Agent 1 reviews INTEGRATION_CONTRACTS.md sections 2 and 5 and answers the questions; Agent 3 answers section 6.
 3. Claude reviews and approves the architecture contracts (ARCHITECTURE.md, DECISIONS.md).
 4. Settle minimum SDK with Agent 1 (provisional 26).
+
+## M1 retry (Agent 2, 2026-11-24, about 02:42 IST)
+Result: **M1 BLOCKED (environment).** Build status stays UNVERIFIED. Nothing compiled.
+
+Commands and exact output:
+- SDK search: `ls -d /opt /usr/lib/android-sdk ~/Android /opt/android* /usr/local/android*` returned only `/opt`. `ANDROID_HOME` and `ANDROID_SDK_ROOT` unset. `sdkmanager` not on PATH.
+- `curl -sI https://dl.google.com/android/repository/repository2-3.xml` gave `HTTP/1.1 403 Forbidden (agent proxy: no rule or network setting allows this host)`.
+- `curl -sI https://repo.maven.apache.org/maven2/` gave the same 403 with the same proxy message.
+- `curl -sI https://plugins.gradle.org/m2/` gave the same 403 with the same proxy message.
+- `curl -sI https://services.gradle.org/distributions/gradle-8.14.3-bin.zip` gave the same 403 with the same proxy message. No Gradle wrapper can be generated.
+- `gradle :app:assembleDebug --no-daemon --console=plain` (system Gradle 8.14.3, no wrapper): `BUILD FAILED in 10s`. Failure: `Plugin [id: 'com.android.application', version: '8.7.3', apply: false] was not found in any of the following sources ... could not resolve plugin artifact 'com.android.application:com.android.application.gradle.plugin:8.7.3'. Searched in: Google, MavenRepo, Gradle Central Plugin Repository.`
+
+Cause: the egress proxy refuses every Google, Maven and Gradle host (and services.gradle.org). The build stops at plugin resolution, before any source file is compiled. No SDK exists to install.
+
+Static review (read only, no compiler): no compile-breaking issue found in `settings.gradle.kts`, the root and module build scripts, `gradle/libs.versions.toml`, `AndroidManifest.xml`, `MainActivity.kt`, `DataLayer.kt` or `Identifiers.kt`. This is not evidence that the build passes. Code was not changed.
+
+Unblock options (owner): give this session access to `dl.google.com`, `repo.maven.apache.org`, `plugins.gradle.org` and `services.gradle.org`, or run the build on a machine with them and an Android SDK (platform 35, build-tools).
+
+## M2 contracts (Agent 2, docs only)
+- `docs/architecture/INTEGRATION_CONTRACTS.md` v2: 0 of 15 contracts AGREED. Agent 1 and Agent 3 answers were not in the repository when checked.
+- `docs/architecture/DECISIONS.md`: ADR-011 to ADR-015 added (minSdk, HTTP stack, DI, ABI module placement, port error types).

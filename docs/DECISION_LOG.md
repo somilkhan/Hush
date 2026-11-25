@@ -71,3 +71,64 @@ Format per MASTER_HANDOVER §4.
 - **Trade-offs:** Any copied or derived CloudStream code must keep copyright notices and be attributed. Extension API compatibility (`com.lagradost.cloudstream3.*` names) must still be reviewed for licence and attribution before implementation.
 - **Affected modules:** `LICENSE`, all source files (headers to be added when real code exists), docs/reverse-engineering/LICENSING_AUDIT.md.
 - **Verification:** `LICENSE` text copied from system GPL-3 file (Debian common-licenses). Attribution list not yet written.
+
+## D-008 — Architecture drivers and forks (software-architecture interview, 2026-11-25)
+- **Date:** 2026-11-25
+- **Decision:** Sideload APK only; no backend and no accounts; offline downloads in scope now (ADR-019 PROPOSED, WorkManager + Room index); manual device testing is the acceptance gate; provider failure isolation per call (ADR-018).
+- **Context:** No SRS exists, so the fallback interview ran. Owner answers recorded in `docs/architecture/SOFTWARE_ARCHITECTURE.md`.
+- **Options considered:** Full list of forks and options is in that document (sections 5, ADR-018 to ADR-022).
+- **Chosen approach:** As listed above.
+- **Reason:** Owner's answers to four questions; privacy and local control are the top drivers.
+- **Trade-offs:** Offline downloads widen the first slice and raise a legal question for the owner. Manual-only testing means regressions are caught by the owner, not by CI.
+- **Affected modules:** `:core:download` (new, not yet created), `:core:data`, `:app`, `.github/workflows/android.yml` (release build later).
+- **Verification:** Document review only. No code verifies these choices yet.
+
+## D-009 — Screen structure modelled on owner's NuvioMobile-Enhanced fork
+- **Date:** 2026-11-25
+- **Decision:** Home, Search, Details and Library screen structure follows the layout of the owner's public fork `luqmanfadlli/NuvioMobile-Enhanced` (GPL-3.0). HUSH's own palette, tokens and naming are kept.
+- **Context:** Owner asked for the same screen structure and confirmed the fork is their own ("mera").
+- **Options considered:** Copy code (rejected); reimplement the structure from the public source (chosen); use a generic layout (rejected by owner).
+- **Reason:** Owner's direction. No code, artwork or logos were copied. Nuvio logos and wordmark are not used.
+- **Trade-offs:** Structure only. Visuals were not matched because the screenshots were not readable. Posters are tonal placeholders labelled DEMO until artwork exists.
+- **Affected modules:** `app/.../ui/` (HushApp, Home, Search, Details, Library, PosterCard, HeroBanner).
+- **Verification:** CI `:app:assembleDebug` green on run 45480169532. Not yet tested on device.
+- **Open:** Whether to add an attribution line in a NOTICE file for the source of the structure. Owner has not decided.
+
+## D-010 — Backend approved: Supabase, email and password, sync-ready design
+- **Date:** 2026-11-25
+- **Decision:** Owner approved a backend now, not later. Supabase with email and password login. Sync covers library, addons and plugins (the same scope Nuvio uses). Supabase project is owned by the owner; the Nuvio fallback URL is not used. Supersedes ADR-021 ("no backend, no accounts") for the account and sync scope; downloads stay device-local.
+- **Context:** Owner said rewriting later would cost more, so the data layer is built sync-ready now (repository interfaces with local and remote adapters).
+- **Options considered:** Backend in a separate milestone (recommended by Claude, not chosen); backend now (chosen).
+- **Reason:** Owner's decision, with the reason that a later rewrite is more expensive.
+- **Trade-offs:** Adds auth, a server schema, Row Level Security, and privacy duties. Client holds only the anon key; RLS must be enabled on every table before any release.
+- **Affected modules:** `:core:data` (remote adapter), `:core:domain` (repository interfaces), `:app` (auth gate), new `supabase/` schema folder.
+- **Verification:** Not yet. Waiting for owner to provide project URL and anon key (kept in `local.properties`, never committed).
+
+## D-011 — Guest mode on the login screen (like NuvioMobile-Enhanced)
+- **Date:** 2026-11-25
+- **Decision:** Login screen offers "Continue as guest". Guest uses the app fully on device, with no account and no sync. A guest can sign in later, and local data is then offered for upload.
+- **Context:** Owner asked for guest login, following the Nuvio pattern.
+- **Options considered:** Login required (rejected); guest only, no sign-in (rejected); guest with later sign-in (chosen).
+- **Reason:** Owner's direction. Keeps the app usable without an account.
+- **Trade-offs:** Merging guest data into an account needs a clear rule (ask the user before upload; never overwrite server data silently).
+- **Affected modules:** `:app` login screen, `:core:data` local store, `SupabaseAuthRepository`.
+- **Verification:** Not yet. Build pending the login screen.
+
+## D-012 — Upstream permission from CloudStream (owner-reported)
+- **Date:** 2026-11-25
+- **Decision:** Owner reports that permission was granted by CloudStream for reuse of its code and API names. Recorded as owner-reported only.
+- **Context:** Owner says the permission is personal and cannot be shared. No written evidence is in the repo.
+- **Trade-offs:** Not verifiable from the repo. Extension code belongs to its own authors and needs separate permission and a security analysis. M3 stays OPEN until a written record exists.
+- **Affected modules:** `docs/compatibility/`, any future ported CloudStream code.
+- **Verification:** None on file. Owner statement only.
+
+## D-013 — M3 compat legal review waived by owner
+- **Date:** 2026-11-25
+- **Decision:** M3 (external legal review of CloudStream extension API names) is waived by the owner. The compat layer may be implemented.
+- **Context:** Owner states CloudStream gave permission (D-012, owner-reported, no written record on file). Owner wrote the M3 gate in the execution plan and chose to waive it.
+- **Options considered:** Keep M3 blocking until a written lawyer opinion (previous plan); owner waiver with recorded risk (chosen).
+- **Chosen approach:** Waiver recorded here. `docs/compatibility/LEGAL_REVIEW.md` stays a placeholder and must not be claimed as a lawyer's opinion.
+- **Reason:** Owner decision. Licences are GPL-3.0 on both sides.
+- **Trade-offs:** No independent legal opinion on file. Owner carries the legal risk. Extension code from third parties still needs its own permission check and a security analysis (ADR and execution-plan rule 5).
+- **Affected modules:** `docs/compatibility/`, `core/data` (future compat layer), `:app`.
+- **Verification:** Owner statement only. No written evidence in the repo.

@@ -98,3 +98,23 @@ Until 1 to 4 exist, no row may be marked PASS. CloudStream's own `app/.../utils/
 | Extensions can run without a host | **Inference: false**, since they link against host classes |
 | A HUSH build with `com.lagradost.cloudstream3` shim will load them | **NOT TESTED** |
 | Extension behaviour at run time | **NOT TESTED** |
+
+## 8. M2 cross-reference (source answers, all NOT TESTED at run time)
+
+Details and citations are in `EXTENSION_ARCHITECTURE.md`, section "M2 answers". Reference commit `a28e6468`.
+
+| Q | Question (INTEGRATION_CONTRACTS §5) | Answer in one line | Status | Matrix row |
+|---|---|---|---|---|
+| 1 | Search and details: one call or two? | Two: `search(query, page)` summaries, `load(url)` details | VERIFIED | 6, 7 |
+| 2 | Episodes in details or separate? | In details (`TvSeriesLoadResponse.episodes`); each episode's `data` feeds `loadLinks` | VERIFIED | 7, 8 |
+| 3 | Stream resolution incremental? Subtitles inside? | One suspend `loadLinks` with callbacks; subtitles emitted inside it | VERIFIED | 9, 10 |
+| 4 | Which operations can be unimplemented? | All of `getMainPage`, `search`, `quickSearch`, `load`, `loadLinks`, `extractorVerifierJob` throw by default; no subtitle capability flag | VERIFIED | 6-10 |
+| 5 | Execution and timeouts | In process, `Dispatchers.IO`; 120 s default, clamped 5 s to 8 min; cancellation swallowed by `safeApiCall` | VERIFIED (blocking-call stop: INFERENCE) | 11 |
+| 6 | Minimum SDK | 23 in CloudStream; 26 compatible by inference | VERIFIED / INFERENCE | (none) |
+| 7 | HTTP client and cookie store | Global `app` (nicehttp `Requests`), OkHttp `baseClient`, WebView `CookieManager`; nicehttp jar not verified | VERIFIED / NOT VERIFIED | 4, 9 |
+
+Rows added to the test plan (no status change, all NOT TESTED):
+- Cancellation test: a HUSH compat call must propagate `CancellationException`. CloudStream does not (`safeApiCall`). Add to §5 security tests.
+- Stream flow test: confirm the first `callback` arrives before `loadLinks` returns (incremental behaviour, row 9).
+- Subtitle test: confirm `subtitleCallback` fires from an extractor, not only from the provider (row 10).
+- Timeout test: confirm a `loadLinks` timeout returns `false` silently and produces no error event (row 9).

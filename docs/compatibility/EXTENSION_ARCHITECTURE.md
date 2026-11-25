@@ -261,3 +261,122 @@ Domain types (`MediaDetails`, `StreamCandidate`, `SubtitleTrack`, `EpisodeRef`, 
 - Loading, registration, search, details, stream extraction and subtitles: **[V]** from source only, **[NT]** at run time.
 - Security posture: analysed from source; no exploit or isolation testing performed.
 - See `COMPATIBILITY_MATRIX.md` for per-operation status.
+
+## M2 answers (to Agent 2's INTEGRATION_CONTRACTS.md §5)
+
+Reference: CloudStream commit `a28e6468f54cfe420feebd205d3d21d08ed0cde8` (checked out at the session scratchpad, read only, not executed). Paths are relative to that clone. Labels: **VERIFIED** = read in source; **INFERENCE** = reasoned, not checked in source; **NOT VERIFIED** = outside this repo or not checked.
+
+### Q1. Does search and details split into two calls?
+**VERIFIED: yes.** Search and details are separate operations on `MainAPI` (`library/src/commonMain/kotlin/com/lagradost/cloudstream3/MainAPI.kt`):
+- `search(query: String, page: Int): SearchResponseList?` (line ~641). Default delegates to `search(query)`, which returns `List<SearchResponse>?` (line ~651). `quickSearch(query)` at line ~656.
+- `load(url: String): LoadResponse?` (line ~665). Input is a URL string, not an id.
+- Search results are summaries. `SearchResponseList` carries `hasNext`, so paging is per provider.
+- Caller: `app/.../ui/search/SearchViewModel.kt` (`a.search(query, 1)` at ~235, `repo.search(query, nextPage)` at ~137). Details: `APIRepository.load` (`app/.../ui/APIRepository.kt`), which caches results for 10 minutes.
+
+Impact on HUSH: `SearchPort` and `MediaDetailsPort` can keep their shapes. Two corrections are needed. Pagination is an `Int` page plus `hasNext`, not an opaque cursor, so `cursor: String?` is a poor fit; the compat layer can encode the page into the cursor. `MediaRef` must map to the provider's URL string.
+
+### Q2. Are episodes always in details, or fetched separately?
+**VERIFIED: episodes come with details.** There is no episode-only operation on `MainAPI`. A grep for `getEpisodes`, `loadEpisodes` and `episodes(` in `library/src` returns nothing.
+- Series: `TvSeriesLoadResponse.episodes: List<Episode>` (`MainAPI.kt` ~2673).
+- Each `Episode` has `data: String` (`MainAPI.kt` ~2550). That string is the only input `loadLinks` takes for playback.
+- Movies: `MovieLoadResponse.dataUrl: String` (`MainAPI.kt` ~2418) plays the same role.
+- There is no season parameter anywhere in the contract. Season structure is whatever the extension puts in the episode list.
+
+Impact on HUSH: `EpisodePort.episodes(ref, season)` has no CloudStream equivalent. Drop it, or treat it as a filter over the details result. `EpisodeRef` should carry the episode `data` string. For a movie, the equivalent is `dataUrl`.
+INFERENCE: some extensions may fetch episodes lazily inside their own code. That is not visible to the host and is not part of the contract.
+
+### Q3. Is stream resolution incremental or one call? Are subtitles extracted inside it?
+**VERIFIED: one suspend call that reports incrementally through callbacks.**
+- Signature (`MainAPI.kt` ~692): `suspend fun loadLinks(data: String, isCasting: Boolean, subtitleCallback: (SubtitleFile) -> Unit, callback: (ExtractorLink) -> Unit): Boolean`.
+- The function returns only when it finishes. Links are delivered through `callback` as they are found.
+- The player consumes it incrementally: `app/.../ui/player/PlayerGeneratorViewModel.kt` (~386-430) calls `modifyState { add(link) }` inside each callback. `RepoLinkGenerator.generateLinks` (`app/.../ui/player/RepoLinkGenerator.kt`, call at ~109) forwards both callbacks.
+- **Subtitles are inside the same call.** `subtitleCallback` is passed through to `loadExtractor(url, referer, subtitleCallback, callback)` (`library/.../utils/ExtractorApi.kt` ~912-968). Extractors can emit subtitles during `loadLinks`.
+- `SubtitleFile` (`MainAPI.kt` ~1203) has `lang`, `url` and `headers`. `ExtractorLink` (`library/.../utils/ExtractorApi.kt` ~698) has `url`, `referer`, `headers`, `quality`, `type`, `audioTracks`.
+
+Impact on HUSH:
+- `StreamResolutionPort` can stay a `Flow`. Wrap the callbacks with `callbackFlow`. The Flow is an adapter over the callbacks, not a native incremental API.
+- `SubtitlePort.subtitles(...)` is redundant for CloudStream providers. Subtitles only exist as a side effect of `loadLinks`. Recommend making subtitles a property of `StreamSource` or an event (`SubtitleFound`), not a separate call.
+- Failure detail is lost. `loadLinks` returns `Boolean`, and `APIRepository.loadLinks` catches `Throwable` and returns `false` (see Q5). `StreamEvent.Failed(AppError)` can only be built from errors the compat layer catches itself.
+- `getVideoInterceptor(extractorLink): Interceptor?` (`MainAPI.kt` ~702) returns an OkHttp `Interceptor` used at playback. HUSH's `StreamSource` has no slot for it. Either the player must be OkHttp-based, or the contract needs a playback hook. Flag for Agent 3 and Claude.
+
+### Q4. Which operations can an extension leave unimplemented?
+**VERIFIED.** The `MainAPI` base class throws `NotImplementedError` by default for these:
+
+| Operation | Default (`MainAPI.kt`) | Host gate before calling |
+|---|---|---|
+| `getMainPage` | throws (~633) | `hasMainPage` (~563) checked in `HomeViewModel.kt` (~136, ~329) |
+| `search(query)` | throws (~651) | none; the search screen calls every provider (`SearchViewModel.kt` ~233-235) |
+| `quickSearch` | throws (~656) | `hasQuickSearch` (~564) checked in `SearchViewModel.kt` (~233) and `QuickSearchFragment.kt` (~144) |
+| `load` | throws (~665) | none |
+| `extractorVerifierJob` | throws (~679) | none; background job during playback |
+| `loadLinks` | throws (~692) | none |
+
+- A thrown `NotImplementedError` becomes `Resource.Failure(false, "This operation is not implemented.")` (`library/.../mvvm/ArchComponentExt.kt`, `throwAbleToResource`). That is the host's own "unsupported" signal.
+- Non-throwing defaults: `getVideoInterceptor` returns `null`. `getLoadUrl(name, id)` returns `null`. `supportedSyncNames` is empty. `supportedTypes` has a default set.
+- **There is no capability flag for subtitles.** An extension with no subtitle support and one with no subtitles for a given title look the same: `subtitleCallback` never fires. HUSH's `SubtitlePort` distinction between `Unsupported` and empty cannot be made from CloudStream data. Compat can only report "no subtitles observed".
+- Operations an extension must implement to be useful: `search` (or `quickSearch`), `load` and `loadLinks`. Without `loadLinks`, nothing can play.
+- Matrix note: no sample extension among the five surveyed was observed to override `loadLinks` (`COMPATIBILITY_MATRIX.md` §2 row 9). That is a DATA-VERIFIED observation about the sample set only.
+
+### Q5. Where does provider execution run, and what timeouts apply?
+**Execution: VERIFIED.**
+- In process. `app/.../plugins/PluginManager.kt` `loadPlugin` (~593-611) builds `PathClassLoader(filePath, context.classLoader)`, so the extension shares the app process, its UID and its heap. There is no separate process, no class-loader isolation beyond the Android loader, and no permission boundary.
+- The file is set read-only before loading (~597).
+- Thread: `safeApiCall` (`library/.../mvvm/ArchComponentExt.kt` ~207-218) calls `ioWork`, which uses `withContext(workerDispatcher)` (`library/.../utils/Coroutines.kt` ~46-50). On JVM, `workerDispatcher = Dispatchers.IO` (`library/src/jvmCommonMain/.../Coroutines.jvmCommon.kt:6`).
+- `loadLinks` runs inside `safeApiCall` in the player's generator path, so it is also on `Dispatchers.IO`.
+
+**Timeouts: VERIFIED.** Defined in `app/.../ui/APIRepository.kt`:
+- `DEFAULT_TIMEOUT = 120_000L` (2 min), `MIN_TIMEOUT = 5_000L`, `MAX_TIMEOUT = 4 * DEFAULT_TIMEOUT` (8 min). `getTimeout(desired)` clamps the provider's value to [5 s, 8 min] and uses 2 min when unset.
+- Per-operation overrides on `MainAPI`: `loadLinksTimeoutMs` (~573), `getMainPageTimeoutMs` (~580), `searchTimeoutMs` (~587), `quickSearchTimeoutMs` (~594), `loadTimeoutMs` (~601). The doc comment calls them a "hint" (~568), but the code clamps them as above.
+- Enforced with `withTimeout` in `APIRepository`: `load`, `search`, `quickSearch`, `getMainPage`, `loadLinks` (~209). `extractorVerifierJob` has no timeout.
+- The timeout covers the whole `loadLinks` call, not each stream. A slow provider can hold the stream flow for up to 8 minutes.
+
+**Failure semantics: VERIFIED, important for HUSH's cancellation rule.**
+- `safeApiCall` catches `Throwable`. `throwAbleToResource` maps `CancellationException` to `safeFail(...)` (`ArchComponentExt.kt` ~196-199, `safeFail` ~144-147), which returns `Resource.Failure`. **Cancellation is turned into a failure and is not rethrown.**
+- `APIRepository.loadLinks` catches `Throwable` (including the timeout's `CancellationException`), logs it, and returns `false`. A timeout in `loadLinks` is silent.
+- Consequence: HUSH's compat layer must not call these wrappers for `load`, `search` or `loadLinks`. It must call `MainAPI` methods directly and rethrow `CancellationException`. This conflicts with nothing in the contracts, but it is a real CloudStream behaviour that must not be copied.
+- `SearchViewModel` (~233-250) fans out with `amap` on `Dispatchers.IO`. A new query does not cancel older provider calls. They are ignored through a `currentSearchIndex` check. HUSH's "cancelling the collector cancels all in-flight provider work" is stricter than CloudStream.
+
+**INFERENCE:** `withTimeout` only interrupts at suspension points. A provider blocked in a non-suspending call (for example a synchronous socket read) is not stopped at the timeout. This follows from kotlinx.coroutines semantics, not from a test.
+
+**Default timeouts to propose for HUSH (from CloudStream, not tested):** search 2 min, details 2 min, stream resolution 2 min per call, with the same 5 s floor and 8 min ceiling.
+
+### Q6. Minimum SDK the extension runtime needs
+**VERIFIED: 23.** `gradle/libs.versions.toml` line 67: `minSdk = "23"`. `app/build.gradle.kts` (~107) and `library/build.gradle.kts` (~30) both read `libs.versions.minSdk`. Other values: `compileSdk = "37"` (line 68), `targetSdk = "36"` (line 69), `jvmTarget = "11"` (line 65).
+- CloudStream pins older libraries to keep API 23 working. Jackson `2.13.1` is pinned with the comment that later versions do not support minSdk below 26 and crash on Android TV and Fire TV (line 22). Rhino `1.8.1` is pinned because 1.9.0 and later need minSdk 26 (line 50).
+- **INFERENCE:** HUSH at minSdk 26 (the provisional value) is compatible with the extension ABI. A higher minimum does not break extensions, and it lets HUSH drop the Jackson and Rhino pins. No CloudStream source checked here requires API below 26 at run time apart from those pins.
+- Decision for Claude: the extension ABI does not force 23. Choose the minimum by the device target, not compatibility. Keep 26 provisional until Claude decides (EXECUTION_PLAN §8.5).
+
+### Q7. Does the extension layer need a specific HTTP client or cookie store?
+**VERIFIED: extensions rely on a global client, and cookies live in two places.**
+- Global client: `library/src/commonMain/kotlin/com/lagradost/cloudstream3/MainActivity.kt` (~30-34) declares a top-level `var app = Requests(responseParser = jsonResponseParser)` with a user-agent default header. `insecureApp` (~37) is the same without SSL checks and is annotated `@UnsafeSSL`. Both are public, mutable top-level variables.
+- Example use: `library/.../extractors/Up4Stream.kt` (~31) calls `app.get(url, cookies = mapOf("id" to movieId))`.
+- Underlying OkHttp client: `app/.../network/RequestsHelper.kt` (~20) sets `baseClient = buildDefaultClient(context)`. That builder (~38-70) sets `followRedirects`, a 50 MiB HTTP cache at `cacheDir/http_cache`, a user-selected DNS option, and a Conscrypt security provider.
+- Per-request cookies: `getHeaders(headers, cookie)` (`RequestsHelper.kt`, end of file) merges default headers, request headers and a `Cookie` header built from a map.
+- Persistent cookie store: `CloudflareKiller.kt` (~37, ~81) uses Android WebView's global `CookieManager` (`removeAllCookies`, `getCookie`). A WebView resolver also exists in `library/.../network/WebViewResolver.kt`.
+- The `nicehttp` library (pinned `0.4.18` in `gradle/libs.versions.toml` lines 44 and 136) supplies `Requests`, `cookies` and `RequestBodyTypes`. **NOT VERIFIED:** the cookie jar inside nicehttp. Its source is not in this repository.
+
+Impact on HUSH:
+- Extensions reference the global `app`/`insecureApp` names (`DATA-VERIFIED` in the matrix). The compat layer must supply compatible `Requests` objects, or the extension will fail to link. That is part of the D-A decision.
+- Compat needs one OkHttp client with an explicit cookie store, and that store should be per repository, not global. Two stores exist in CloudStream (nicehttp and WebView); HUSH should pick one and document it.
+- Because `app` is a mutable global, an extension can replace the client for every other extension. That is a security concern for §5 of this document, not a compatibility requirement.
+- `getVideoInterceptor` (Q3) uses OkHttp, so the player path must also accept OkHttp interceptors.
+
+### Summary table
+
+| Q | Answer | Status |
+|---|---|---|
+| 1 | Two calls: `search(query, page)` returns summaries; `load(url)` returns details. Pagination is `Int` + `hasNext`. | VERIFIED |
+| 2 | Episodes come inside `load` (`TvSeriesLoadResponse.episodes`). Each episode's `data` drives `loadLinks`. No episode-only call. | VERIFIED |
+| 3 | `loadLinks` is one suspend call with `callback` (links) and `subtitleCallback`. Subtitles come from inside it. | VERIFIED |
+| 4 | `getMainPage`, `search`, `quickSearch`, `load`, `extractorVerifierJob`, `loadLinks` all throw `NotImplementedError` by default. No subtitle capability flag. | VERIFIED |
+| 5 | In-process, `Dispatchers.IO`. Default 120 s (floor 5 s, ceiling 8 min). `safeApiCall` swallows cancellation. | VERIFIED; blocking-call behaviour INFERENCE |
+| 6 | minSdk 23 (CloudStream). HUSH 26 compatible by inference. | VERIFIED (23); INFERENCE (26) |
+| 7 | Global `app` OkHttp client; per-request cookies; WebView `CookieManager` global; nicehttp jar not verified. | VERIFIED; nicehttp NOT VERIFIED |
+
+### Unanswerable from source in this repo
+- The nicehttp cookie jar and request timeout defaults (external library).
+- Whether individual extensions fetch episodes lazily or handle seasons internally (only their dex would show it, and running it is out of scope).
+- Real timeout behaviour on blocking network calls (needs a run, M6).
+- Any value that depends on the extension running in a device or emulator (all of M6).
+
+All rows above remain **NOT TESTED** at run time (`COMPATIBILITY_MATRIX.md`).

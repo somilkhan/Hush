@@ -8,3 +8,6 @@ captures/
 *.apk
 *.aab
 .DS_Store
+
+# Local agent worktrees (not project content)
+.claude/worktrees/
