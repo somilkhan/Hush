@@ -121,6 +121,7 @@ fun HushVideoPlayer(
                 Lifecycle.Event.ON_PAUSE -> {
                     wasPlaying = p.playWhenReady
                     p.pause()
+                    progressCallback(p.currentPosition, p.duration.coerceAtLeast(0L))
                 }
                 Lifecycle.Event.ON_RESUME -> if (wasPlaying) p.play()
                 else -> Unit

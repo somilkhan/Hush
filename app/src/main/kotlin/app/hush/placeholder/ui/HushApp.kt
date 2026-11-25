@@ -107,13 +107,28 @@ private fun AppShell(
     var sourcesOpen by rememberSaveable { mutableStateOf(false) }
     // Bumped when addons change, so Home reloads its catalogue.
     var catalogRev by rememberSaveable { mutableStateOf(0) }
-    var playing by remember { mutableStateOf<PlayRequest?>(null) }
+    // Playback state is saveable, so rotation during playback keeps the player open.
+    var playUrl by rememberSaveable { mutableStateOf<String?>(null) }
+    var playMediaId by rememberSaveable { mutableStateOf("") }
+    var playEpisodeId by rememberSaveable { mutableStateOf("") }
+    var playTitle by rememberSaveable { mutableStateOf("") }
+    var playStartMs by rememberSaveable { mutableStateOf(0L) }
+    fun startPlaying(r: PlayRequest) {
+        playUrl = r.url
+        playMediaId = r.mediaId
+        playEpisodeId = r.episodeId
+        playTitle = r.title
+        playStartMs = r.startMs
+    }
+    fun stopPlaying() {
+        playUrl = null
+    }
     var continueItems by remember { mutableStateOf<List<WatchEntry>>(emptyList()) }
     // Progress is written after the player is released, so it outlives the composition.
     val recordScope = remember { CoroutineScope(SupervisorJob() + Dispatchers.IO) }
     val resumeScope = rememberCoroutineScope()
 
-    LaunchedEffect(playing, catalogRev, tab, detailId) {
+    LaunchedEffect(playUrl, catalogRev, tab, detailId) {
         continueItems = historyRepository.all()
             .filter { !it.completed && it.positionMs > 0 }
             .groupBy { it.mediaId }
@@ -122,8 +137,8 @@ private fun AppShell(
             .sortedByDescending { it.updatedAtEpochMs }
     }
 
-    val request = playing
-    BackHandler(enabled = request != null) { playing = null }
+    val request = playUrl?.let { PlayRequest(it, playMediaId, playEpisodeId, playTitle, playStartMs) }
+    BackHandler(enabled = request != null) { stopPlaying() }
     BackHandler(enabled = request == null && detailId != null) { detailId = null }
     BackHandler(enabled = request == null && detailId == null && sourcesOpen) { sourcesOpen = false }
 
@@ -134,9 +149,10 @@ private fun AppShell(
                 url = request.url,
                 startPositionMs = request.startMs,
                 modifier = Modifier.fillMaxSize(),
-                onBack = { playing = null },
+                onBack = { stopPlaying() },
                 onProgress = { positionMs, durationMs ->
-                    recordScope.launch {
+                    // Ignore the 0 reported while buffering, so it cannot erase a saved position.
+                    if (positionMs > 0) recordScope.launch {
                         historyRepository.record(
                             WatchEntry(
                                 mediaId = request.mediaId,
@@ -156,7 +172,7 @@ private fun AppShell(
                 library = libraryRepository,
                 mediaId = id,
                 onBack = { detailId = null },
-                onPlay = { playing = it },
+                onPlay = { startPlaying(it) },
             )
             sourcesOpen -> SourcesScreen(
                 registry = addonRegistry,
@@ -176,7 +192,7 @@ private fun AppShell(
                                     val stream = mediaRepository.details(entry.mediaId)
                                         ?.let { item -> mediaRepository.streams(item, entry.episodeId).firstOrNull() }
                                     if (stream != null) {
-                                        playing = PlayRequest(stream.url, entry.mediaId, entry.episodeId, entry.title, entry.positionMs)
+                                        startPlaying(PlayRequest(stream.url, entry.mediaId, entry.episodeId, entry.title, entry.positionMs))
                                     } else {
                                         detailId = entry.mediaId
                                     }

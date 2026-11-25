@@ -32,18 +32,20 @@ class LocalWatchHistoryRepository(context: Context) : WatchHistoryRepository {
 
     private fun read(): List<WatchEntry> {
         val text = prefs.getString("entries", null) ?: return emptyList()
-        val array = JSONArray(text)
-        return (0 until array.length()).map { i ->
-            val o = array.getJSONObject(i)
-            WatchEntry(
-                mediaId = o.getString("mediaId"),
-                episodeId = o.optString("episodeId"),
-                positionMs = o.optLong("positionMs"),
-                durationMs = o.optLong("durationMs"),
-                completed = o.optBoolean("completed"),
-                updatedAtEpochMs = o.optLong("updatedAtEpochMs"),
-                title = o.optString("title"),
-            )
+        val array = runCatching { JSONArray(text) }.getOrNull() ?: return emptyList()
+        return (0 until array.length()).mapNotNull { i ->
+            runCatching {
+                val o = array.getJSONObject(i)
+                WatchEntry(
+                    mediaId = o.getString("mediaId"),
+                    episodeId = o.optString("episodeId"),
+                    positionMs = o.optLong("positionMs"),
+                    durationMs = o.optLong("durationMs"),
+                    completed = o.optBoolean("completed"),
+                    updatedAtEpochMs = o.optLong("updatedAtEpochMs"),
+                    title = o.optString("title"),
+                )
+            }.getOrNull()
         }
     }
 

@@ -5,42 +5,48 @@ import app.hush.placeholder.core.domain.model.MediaKind
 import app.hush.placeholder.core.domain.sync.LibraryEntry
 import app.hush.placeholder.core.domain.sync.LibraryRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * Device-local library (saved titles). Stored as JSON in private preferences.
- * Temporary store: move to Room when watch history lands. Sync to Supabase is a later adapter.
+ * Device-local library (saved titles). JSON in private preferences, mutex-guarded writes.
+ * A malformed row is skipped instead of crashing every later read. Sync comes later behind the same interface.
  */
 class LocalLibraryRepository(context: Context) : LibraryRepository {
 
     private val prefs = context.getSharedPreferences("hush_library", Context.MODE_PRIVATE)
+    private val lock = Mutex()
 
-    override suspend fun all(): List<LibraryEntry> = withContext(Dispatchers.IO) { read() }
+    override suspend fun all(): List<LibraryEntry> = withContext(Dispatchers.IO) {
+        lock.withLock { read() }
+    }
 
     override suspend fun upsert(entry: LibraryEntry) = withContext(Dispatchers.IO) {
-        val updated = read().filterNot { it.mediaId == entry.mediaId } + entry
-        write(updated)
+        lock.withLock { write(read().filterNot { it.mediaId == entry.mediaId } + entry) }
     }
 
     override suspend fun remove(mediaId: String) = withContext(Dispatchers.IO) {
-        write(read().filterNot { it.mediaId == mediaId })
+        lock.withLock { write(read().filterNot { it.mediaId == mediaId }) }
     }
 
     private fun read(): List<LibraryEntry> {
         val text = prefs.getString("items", null) ?: return emptyList()
-        val array = JSONArray(text)
-        return (0 until array.length()).map { i ->
-            val o = array.getJSONObject(i)
-            LibraryEntry(
-                mediaId = o.getString("mediaId"),
-                kind = MediaKind.valueOf(o.getString("kind")),
-                title = o.getString("title"),
-                posterUrl = o.optString("posterUrl").ifBlank { null },
-                saved = o.optBoolean("saved", true),
-                updatedAtEpochMs = o.optLong("updatedAtEpochMs"),
-            )
+        val array = runCatching { JSONArray(text) }.getOrNull() ?: return emptyList()
+        return (0 until array.length()).mapNotNull { i ->
+            runCatching {
+                val o = array.getJSONObject(i)
+                LibraryEntry(
+                    mediaId = o.getString("mediaId"),
+                    kind = MediaKind.valueOf(o.getString("kind")),
+                    title = o.getString("title"),
+                    posterUrl = o.optString("posterUrl").ifBlank { null },
+                    saved = o.optBoolean("saved", true),
+                    updatedAtEpochMs = o.optLong("updatedAtEpochMs"),
+                )
+            }.getOrNull()
         }
     }
 

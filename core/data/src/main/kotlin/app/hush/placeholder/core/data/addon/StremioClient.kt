@@ -39,10 +39,11 @@ class StremioClient(
         http.newCall(request).execute().use { response ->
             if (!response.isSuccessful) error("Addon returned HTTP ${response.code}")
             val body = response.body ?: error("Addon returned an empty response")
-            if (body.contentLength() > MAX_BYTES) error("Addon response too large")
-            val text = body.string()
-            if (text.length > MAX_BYTES) error("Addon response too large")
-            return JSONObject(text)
+            // Bounded read: never buffer more than MAX_BYTES, even when the length is unknown.
+            return body.source().use { source ->
+                if (source.request(MAX_BYTES + 1)) error("Addon response too large")
+                JSONObject(source.readUtf8())
+            }
         }
     }
 
