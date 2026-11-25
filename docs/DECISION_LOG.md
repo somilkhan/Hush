@@ -121,3 +121,14 @@ Format per MASTER_HANDOVER §4.
 - **Trade-offs:** Not verifiable from the repo. Extension code belongs to its own authors and needs separate permission and a security analysis. M3 stays OPEN until a written record exists.
 - **Affected modules:** `docs/compatibility/`, any future ported CloudStream code.
 - **Verification:** None on file. Owner statement only.
+
+## D-013 — M3 compat legal review waived by owner
+- **Date:** 2026-11-25
+- **Decision:** M3 (external legal review of CloudStream extension API names) is waived by the owner. The compat layer may be implemented.
+- **Context:** Owner states CloudStream gave permission (D-012, owner-reported, no written record on file). Owner wrote the M3 gate in the execution plan and chose to waive it.
+- **Options considered:** Keep M3 blocking until a written lawyer opinion (previous plan); owner waiver with recorded risk (chosen).
+- **Chosen approach:** Waiver recorded here. `docs/compatibility/LEGAL_REVIEW.md` stays a placeholder and must not be claimed as a lawyer's opinion.
+- **Reason:** Owner decision. Licences are GPL-3.0 on both sides.
+- **Trade-offs:** No independent legal opinion on file. Owner carries the legal risk. Extension code from third parties still needs its own permission check and a security analysis (ADR and execution-plan rule 5).
+- **Affected modules:** `docs/compatibility/`, `core/data` (future compat layer), `:app`.
+- **Verification:** Owner statement only. No written evidence in the repo.
