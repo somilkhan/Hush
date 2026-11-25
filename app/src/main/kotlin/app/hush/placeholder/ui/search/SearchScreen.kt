@@ -42,7 +42,7 @@ fun SearchScreen(repository: MediaRepository, onOpen: (String) -> Unit) {
             value = state.query,
             onValueChange = vm::onQueryChange,
             modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = HushSpacing.minTouch),
-            label = { Text("Search the demo catalogue") },
+            label = { Text("Search titles") },
             singleLine = true,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(onSearch = { vm.submit() }),
@@ -51,13 +51,13 @@ fun SearchScreen(repository: MediaRepository, onOpen: (String) -> Unit) {
 
         when (val status = state.status) {
             SearchStatus.Idle -> StateMessage(
-                title = "Search the demo list",
-                body = "Results come only from the built-in demo titles.",
+                title = "Search your sources",
+                body = "Searches every addon you have added. Add one in Settings, under Sources.",
             )
             SearchStatus.Loading -> LoadingRows(description = "Searching")
             SearchStatus.Empty -> StateMessage(
                 title = "No matches",
-                body = "Nothing in the demo list matches \"${state.submitted}\".",
+                body = "Nothing matches \"${state.submitted}\" in your sources.",
             )
             SearchStatus.Error -> StateMessage(
                 title = "Search failed",

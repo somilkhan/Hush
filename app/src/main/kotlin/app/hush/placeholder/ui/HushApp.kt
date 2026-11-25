@@ -33,6 +33,7 @@ import app.hush.placeholder.ui.home.HomeScreen
 import app.hush.placeholder.ui.library.LibraryScreen
 import app.hush.placeholder.ui.login.LoginScreen
 import app.hush.placeholder.ui.search.SearchScreen
+import app.hush.placeholder.ui.settings.SettingsScreen
 import app.hush.placeholder.ui.sources.SourcesScreen
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -186,8 +187,10 @@ private fun AppShell(
                         HushTab.SEARCH -> SearchScreen(repository = mediaRepository, onOpen = { detailId = it })
                         HushTab.LIBRARY -> LibraryScreen(
                             library = libraryRepository,
-                            auth = authRepository,
                             onOpen = { detailId = it },
+                        )
+                        HushTab.SETTINGS -> SettingsScreen(
+                            auth = authRepository,
                             onSignIn = onSignIn,
                             onSignedOut = onSignedOut,
                             onManageSources = { sourcesOpen = true },

@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
@@ -54,6 +55,7 @@ enum class HushTab(val title: String, val icon: ImageVector) {
     HOME("Home", Icons.Filled.Home),
     SEARCH("Search", Icons.Filled.Search),
     LIBRARY("Library", Icons.AutoMirrored.Filled.List),
+    SETTINGS("Settings", Icons.Filled.Settings),
 }
 
 /** Glass top bar in the chrome role. Title is a heading for TalkBack. */
