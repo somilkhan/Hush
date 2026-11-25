@@ -6,11 +6,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import app.hush.placeholder.GuestStore
+import app.hush.placeholder.core.domain.account.AuthRepository
 import app.hush.placeholder.core.domain.repository.MediaRepository
 import app.hush.placeholder.core.player.HushVideoPlayer
 import app.hush.placeholder.design.HushTheme
@@ -21,48 +25,79 @@ import app.hush.placeholder.ui.common.HushTab
 import app.hush.placeholder.ui.details.DetailsScreen
 import app.hush.placeholder.ui.home.HomeScreen
 import app.hush.placeholder.ui.library.LibraryScreen
+import app.hush.placeholder.ui.login.LoginScreen
 import app.hush.placeholder.ui.search.SearchScreen
 
+private enum class Gate { CHECKING, LOGIN, MAIN }
+
 /**
- * Root of the UI. Navigation is state-based (no NavHost) for this vertical slice:
- * tabs at the root, then details, then the player. System back walks back one level.
+ * Root of the UI. Shows login until the user has a session or chooses guest.
+ * Navigation is state-based: tabs, then details, then the player. System back walks back one level.
  */
 @Composable
-fun HushApp(mediaRepository: MediaRepository) {
+fun HushApp(
+    mediaRepository: MediaRepository,
+    authRepository: AuthRepository,
+    guestStore: GuestStore,
+) {
     HushTheme {
-        var tab by rememberSaveable { mutableStateOf(HushTab.HOME) }
-        var detailId by rememberSaveable { mutableStateOf<String?>(null) }
-        var playUrl by rememberSaveable { mutableStateOf<String?>(null) }
+        var gate by remember { mutableStateOf(Gate.CHECKING) }
+        LaunchedEffect(Unit) {
+            gate = if (authRepository.currentSession() != null || guestStore.isGuest) Gate.MAIN else Gate.LOGIN
+        }
+        when (gate) {
+            Gate.CHECKING -> Box(Modifier.fillMaxSize().background(HushTokens.colors.canvas))
+            Gate.LOGIN -> LoginScreen(
+                auth = authRepository,
+                onSignedIn = { gate = Gate.MAIN },
+                onGuest = {
+                    guestStore.isGuest = true
+                    gate = Gate.MAIN
+                },
+            )
+            Gate.MAIN -> AppShell(mediaRepository = mediaRepository)
+        }
+    }
+}
 
-        BackHandler(enabled = playUrl != null) { playUrl = null }
-        BackHandler(enabled = playUrl == null && detailId != null) { detailId = null }
+@Composable
+private fun AppShell(mediaRepository: MediaRepository) {
+    var tab by rememberSaveable { mutableStateOf(HushTab.HOME) }
+    var detailId by rememberSaveable { mutableStateOf<String?>(null) }
+    var playUrl by rememberSaveable { mutableStateOf<String?>(null) }
 
-        Box(Modifier.fillMaxSize().background(HushTokens.colors.canvas)) {
-            val url = playUrl
-            val id = detailId
-            when {
-                url != null -> HushVideoPlayer(
-                    url = url,
-                    modifier = Modifier.fillMaxSize(),
-                    onBack = { playUrl = null },
-                )
-                id != null -> DetailsScreen(
-                    repository = mediaRepository,
-                    mediaId = id,
-                    onBack = { detailId = null },
-                    onPlay = { playUrl = it },
-                )
-                else -> Column(Modifier.fillMaxSize()) {
-                    GlassTopBar(title = tab.title)
-                    Box(Modifier.weight(1f)) {
-                        when (tab) {
-                            HushTab.HOME -> HomeScreen(repository = mediaRepository, onOpen = { detailId = it }, onPlay = { playUrl = it })
-                            HushTab.SEARCH -> SearchScreen(repository = mediaRepository, onOpen = { detailId = it })
-                            HushTab.LIBRARY -> LibraryScreen()
-                        }
+    BackHandler(enabled = playUrl != null) { playUrl = null }
+    BackHandler(enabled = playUrl == null && detailId != null) { detailId = null }
+
+    Box(Modifier.fillMaxSize().background(HushTokens.colors.canvas)) {
+        val url = playUrl
+        val id = detailId
+        when {
+            url != null -> HushVideoPlayer(
+                url = url,
+                modifier = Modifier.fillMaxSize(),
+                onBack = { playUrl = null },
+            )
+            id != null -> DetailsScreen(
+                repository = mediaRepository,
+                mediaId = id,
+                onBack = { detailId = null },
+                onPlay = { playUrl = it },
+            )
+            else -> Column(Modifier.fillMaxSize()) {
+                GlassTopBar(title = tab.title)
+                Box(Modifier.weight(1f)) {
+                    when (tab) {
+                        HushTab.HOME -> HomeScreen(
+                            repository = mediaRepository,
+                            onOpen = { detailId = it },
+                            onPlay = { playUrl = it },
+                        )
+                        HushTab.SEARCH -> SearchScreen(repository = mediaRepository, onOpen = { detailId = it })
+                        HushTab.LIBRARY -> LibraryScreen()
                     }
-                    HushNavBar(selected = tab, onSelect = { tab = it })
                 }
+                HushNavBar(selected = tab, onSelect = { tab = it })
             }
         }
     }
