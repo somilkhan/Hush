@@ -113,3 +113,11 @@ Format per MASTER_HANDOVER §4.
 - **Trade-offs:** Merging guest data into an account needs a clear rule (ask the user before upload; never overwrite server data silently).
 - **Affected modules:** `:app` login screen, `:core:data` local store, `SupabaseAuthRepository`.
 - **Verification:** Not yet. Build pending the login screen.
+
+## D-012 — Upstream permission from CloudStream (owner-reported)
+- **Date:** 2026-11-25
+- **Decision:** Owner reports that permission was granted by CloudStream for reuse of its code and API names. Recorded as owner-reported only.
+- **Context:** Owner says the permission is personal and cannot be shared. No written evidence is in the repo.
+- **Trade-offs:** Not verifiable from the repo. Extension code belongs to its own authors and needs separate permission and a security analysis. M3 stays OPEN until a written record exists.
+- **Affected modules:** `docs/compatibility/`, any future ported CloudStream code.
+- **Verification:** None on file. Owner statement only.
