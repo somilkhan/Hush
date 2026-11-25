@@ -3,6 +3,9 @@ package app.hush.placeholder.ui.common
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,10 +33,14 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -97,6 +104,13 @@ fun GlassTopBar(
     }
 }
 
+/**
+ * Visible keyboard focus: a 2dp ring in [color] on [shape], drawn only while the element has
+ * focus. Touch users never see it; it exists for D-pad, keyboard and switch access.
+ */
+fun Modifier.focusRing(focused: Boolean, shape: Shape, color: Color): Modifier =
+    if (focused) border(width = 2.dp, color = color, shape = shape) else this
+
 /** Back control with a 48dp hit area. */
 @Composable
 fun HushBackButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
@@ -131,12 +145,17 @@ fun HushNavBar(
             HushTab.entries.forEach { tab ->
                 val isSelected = tab == selected
                 val tint = if (isSelected) colors.accent else colors.labelSecondary
+                val source = remember { MutableInteractionSource() }
+                val focused by source.collectIsFocusedAsState()
                 Column(
                     modifier = Modifier
                         .weight(1f)
                         .defaultMinSize(minHeight = HushSpacing.minTouch)
+                        .focusRing(focused, HushShapes.m, colors.accent)
                         .selectable(
                             selected = isSelected,
+                            interactionSource = source,
+                            indication = LocalIndication.current,
                             role = Role.Tab,
                             onClick = { onSelect(tab) },
                         )
@@ -186,11 +205,19 @@ fun MediaListItem(
     modifier: Modifier = Modifier,
 ) {
     val colors = HushTokens.colors
+    val source = remember { MutableInteractionSource() }
+    val focused by source.collectIsFocusedAsState()
     Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(HushShapes.m)
-            .clickable(onClickLabel = "Open ${item.title}", role = Role.Button) { onOpen(item.id) }
+            .focusRing(focused, HushShapes.m, colors.accent)
+            .clickable(
+                interactionSource = source,
+                indication = LocalIndication.current,
+                onClickLabel = "Open ${item.title}",
+                role = Role.Button,
+            ) { onOpen(item.id) }
             .padding(vertical = HushSpacing.s12),
         verticalArrangement = Arrangement.spacedBy(HushSpacing.s4),
     ) {
