@@ -45,6 +45,7 @@ private const val PROGRESS_INTERVAL_MS = 5_000L
 fun HushVideoPlayer(
     url: String,
     modifier: Modifier = Modifier,
+    startPositionMs: Long = 0L,
     onBack: () -> Unit,
     onProgress: (positionMs: Long, durationMs: Long) -> Unit = { _, _ -> },
 ) {
@@ -55,7 +56,7 @@ fun HushVideoPlayer(
 
     DisposableEffect(url) {
         val created = ExoPlayer.Builder(context).build().apply {
-            setMediaItem(MediaItem.fromUri(url))
+            setMediaItem(MediaItem.fromUri(url), startPositionMs)
             prepare()
             playWhenReady = true
         }

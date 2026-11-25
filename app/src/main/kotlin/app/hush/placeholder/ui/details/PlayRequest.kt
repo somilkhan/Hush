@@ -6,4 +6,6 @@ data class PlayRequest(
     val mediaId: String,
     val episodeId: String,
     val title: String,
+    /** Where to start playback, in ms. Used when resuming from Continue watching. */
+    val startMs: Long = 0L,
 )

@@ -10,6 +10,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -109,6 +110,7 @@ private fun AppShell(
     var continueItems by remember { mutableStateOf<List<WatchEntry>>(emptyList()) }
     // Progress is written after the player is released, so it outlives the composition.
     val recordScope = remember { CoroutineScope(SupervisorJob() + Dispatchers.IO) }
+    val resumeScope = rememberCoroutineScope()
 
     LaunchedEffect(playing, catalogRev, tab, detailId) {
         continueItems = historyRepository.all()
@@ -129,6 +131,7 @@ private fun AppShell(
         when {
             request != null -> HushVideoPlayer(
                 url = request.url,
+                startPositionMs = request.startMs,
                 modifier = Modifier.fillMaxSize(),
                 onBack = { playing = null },
                 onProgress = { positionMs, durationMs ->
@@ -167,6 +170,17 @@ private fun AppShell(
                             repository = mediaRepository,
                             continueWatching = continueItems,
                             onOpen = { detailId = it },
+                            onResume = { entry ->
+                                resumeScope.launch {
+                                    val stream = mediaRepository.details(entry.mediaId)
+                                        ?.let { item -> mediaRepository.streams(item, entry.episodeId).firstOrNull() }
+                                    if (stream != null) {
+                                        playing = PlayRequest(stream.url, entry.mediaId, entry.episodeId, entry.title, entry.positionMs)
+                                    } else {
+                                        detailId = entry.mediaId
+                                    }
+                                }
+                            },
                             refreshKey = catalogRev,
                         )
                         HushTab.SEARCH -> SearchScreen(repository = mediaRepository, onOpen = { detailId = it })

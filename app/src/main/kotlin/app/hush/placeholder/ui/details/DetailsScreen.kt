@@ -1,6 +1,8 @@
 package app.hush.placeholder.ui.details
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -93,6 +95,9 @@ private fun DetailsContent(
 ) {
     val colors = HushTokens.colors
     val scope = rememberCoroutineScope()
+    val seasons = remember(media.id) { media.episodes.map { it.season }.distinct().sorted() }
+    var season by remember(media.id) { mutableStateOf(seasons.firstOrNull() ?: 1) }
+    val visible = media.episodes.filter { it.season == season }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = HushSpacing.gutter, vertical = HushSpacing.s16),
@@ -135,7 +140,12 @@ private fun DetailsContent(
                 SaveToggle(media = media, library = library)
             }
         }
-        items(media.episodes, key = { it.id }) { episode ->
+        if (seasons.size > 1) {
+            item {
+                SeasonRow(seasons = seasons, selected = season, onSelect = { season = it })
+            }
+        }
+        items(visible, key = { it.id }) { episode ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -214,5 +224,25 @@ private fun SaveToggle(media: MediaItem, library: LibraryRepository) {
             onClick = onClick,
             modifier = Modifier.defaultMinSize(minHeight = HushSpacing.minTouch),
         ) { Text(label) }
+    }
+}
+
+/** Horizontal season picker. Shown only for series with more than one season. */
+@Composable
+private fun SeasonRow(seasons: List<Int>, selected: Int, onSelect: (Int) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(HushSpacing.s8),
+    ) {
+        seasons.forEach { s ->
+            val modifier = Modifier.defaultMinSize(minHeight = HushSpacing.minTouch)
+            if (s == selected) {
+                Button(onClick = { onSelect(s) }, modifier = modifier) { Text("Season $s") }
+            } else {
+                OutlinedButton(onClick = { onSelect(s) }, modifier = modifier) { Text("Season $s") }
+            }
+        }
     }
 }

@@ -50,6 +50,7 @@ fun HomeScreen(
     repository: MediaRepository,
     continueWatching: List<WatchEntry>,
     onOpen: (String) -> Unit,
+    onResume: (WatchEntry) -> Unit,
     refreshKey: Int = 0,
 ) {
     val vm: HomeViewModel = viewModel(key = "home-$refreshKey", factory = viewModelFactoryOf { HomeViewModel(repository) })
@@ -85,7 +86,7 @@ fun HomeScreen(
                 }
                 if (continueWatching.isNotEmpty()) {
                     item(span = { GridItemSpan(maxLineSpan) }) {
-                        ContinueWatchingRow(items = continueWatching, onOpen = onOpen)
+                        ContinueWatchingRow(items = continueWatching, onResume = onResume)
                     }
                 }
                 if (rest.isNotEmpty()) {
@@ -107,7 +108,7 @@ fun HomeScreen(
 }
 
 @Composable
-private fun ContinueWatchingRow(items: List<WatchEntry>, onOpen: (String) -> Unit) {
+private fun ContinueWatchingRow(items: List<WatchEntry>, onResume: (WatchEntry) -> Unit) {
     val colors = HushTokens.colors
     Column(verticalArrangement = Arrangement.spacedBy(HushSpacing.s8)) {
         Text(
@@ -125,7 +126,7 @@ private fun ContinueWatchingRow(items: List<WatchEntry>, onOpen: (String) -> Uni
                 Column(
                     modifier = Modifier
                         .width(200.dp)
-                        .clickable(role = Role.Button, onClickLabel = "Open ${entry.title}") { onOpen(entry.mediaId) },
+                        .clickable(role = Role.Button, onClickLabel = "Resume ${entry.title}") { onResume(entry) },
                     verticalArrangement = Arrangement.spacedBy(HushSpacing.s8),
                 ) {
                     Box(
