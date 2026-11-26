@@ -32,7 +32,7 @@ Quality attributes that now drive the design, in order:
 Hard constraints:
 - CloudStream is GPL-3.0. HUSH is GPL-3.0 (D-007). Any copied code needs attribution.
 - Existing CloudStream repositories and extensions must keep working (handover §0/§6).
-- Namespace `app.hush.placeholder` is provisional (D-002). Do not ship under it.
+- Namespace `app.hushstream` is provisional (D-002). Do not ship under it.
 
 ## 2. System context (C4 level 1)
 
@@ -149,7 +149,7 @@ the last chunk → playback of a finished download reads the local file and neve
 - **Context:** Owner chose GitHub Releases. Store listing needs a cleared name and store policy
   review, and HUSH is not legally cleared (D-001).
 - **Decision:** Build a signed release APK in CI for GitHub Releases. Keep the debug APK artifact
-  in CI for device testing. Keep `app.hush.placeholder` until the naming audit (D-002) ends.
+  in CI for device testing. Keep `app.hushstream` until the naming audit (D-002) ends.
 - **Consequences:** Users install with "unknown sources" enabled. Auto-updates are manual.
   Signing key must be stored as a GitHub secret, never in the repo.
 - **Requirements addressed:** distribution (driver: owner decision), privacy (no store tracking SDKs).

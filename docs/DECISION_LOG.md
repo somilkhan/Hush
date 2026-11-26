@@ -15,9 +15,9 @@ Format per MASTER_HANDOVER §4.
 - **Affected modules:** all docs, app name strings, icon/branding concepts.
 - **Verification:** Trademark and store-name search NOT yet performed (open item).
 
-## D-002 — Package namespace and repo name: PROVISIONAL placeholder `app.hush.placeholder`
+## D-002 — Package namespace and repo name: PROVISIONAL placeholder `app.hushstream`
 - **Date:** 2026-11-24 (provisional placeholder added 2026-11-24)
-- **Decision:** Do not rename the repository (`somilkhan/Hush`) or pick the final package namespace until naming implications are audited. Scaffolding uses the clearly temporary namespace and applicationId `app.hush.placeholder` (`core:data` uses `app.hush.placeholder.core.data`). Do not sign, publish or ship under it.
+- **Decision:** Do not rename the repository (`somilkhan/Hush`) or pick the final package namespace until naming implications are audited. Scaffolding uses the clearly temporary namespace and applicationId `app.hushstream` (`core:data` uses `app.hushstream.core.data`). Do not sign, publish or ship under it.
 - **Context:** User asked not to rename blindly. Gradle skeleton needs a namespace to exist at all.
 - **Options considered:** (a) Use `com.somilkhan.hush`; (b) use a neutral reverse-domain owned by the user; (c) keep a placeholder namespace until legal/store check.
 - **Chosen approach:** Option (c) for scaffolding only. Final namespace still deferred to the naming audit.
@@ -132,3 +132,87 @@ Format per MASTER_HANDOVER §4.
 - **Trade-offs:** No independent legal opinion on file. Owner carries the legal risk. Extension code from third parties still needs its own permission check and a security analysis (ADR and execution-plan rule 5).
 - **Affected modules:** `docs/compatibility/`, `core/data` (future compat layer), `:app`.
 - **Verification:** Owner statement only. No written evidence in the repo.
+
+## D-014 — Public app name: HushStream
+- **Date:** 2026-11-26
+- **Decision:** The owner's final app name is **HushStream** (display name). The working name HUSH is retired for user-facing text.
+- **Context:** Owner chose the name in chat. Repo, package and namespace (`app.hushstream`) are not yet changed.
+- **Options considered:** Keep HUSH (working name); HushStream (chosen).
+- **Chosen approach:** Use HushStream for app label, About screen and store-facing text once implemented. Package, applicationId and repo name stay open under D-002 until the owner decides.
+- **Reason:** Owner decision.
+- **Trade-offs:** The name is not trademark-cleared (CLAUDE.md says the same for HUSH). Owner should run a trademark check before any store or public release. No legal advice given here.
+- **Affected modules:** `app` (string resources, label), `docs/` user-facing copy. No code changed in this entry.
+- **Verification:** Owner statement only. Name not yet applied to code; no build run.
+
+## D-015 — Owner decisions batch 1 (2026-11-26)
+- **Date:** 2026-11-26
+- **Decision:**
+  1. Push the Phase 1 audit branch and the theme fix branch to origin.
+  2. App name only: HushStream. Owner's personal name is not used in code identifiers.
+  3. minSdk follows Nuvio: API 24 (replaces the HUSH 26 default). Other SDK levels follow Nuvio.
+  4. Persistence: move to Room (best practice; supersedes SharedPreferences for library, history and downloads). Previously open under ARCHITECTURE §7 and ADR-010.
+  5. Sign-out keeps device-local guest data, watch history and downloads; only account credentials are cleared.
+  6. Downloads: follow what NuvioMobile-Enhanced does. Owner declined a separate lawyer review. ADR-019 is closed on owner instruction, with the legal risk carried by the owner.
+  7. Name check: owner states HushStream has no conflict. Owner has checked.
+- **Context:** Owner answers to the seven questions raised in chat on 2026-11-26.
+- **Options considered:** Per item, as raised in chat.
+- **Chosen approach:** As listed above.
+- **Reason:** Owner decisions.
+- **Trade-offs:** Item 6 means downloads go ahead without a written legal opinion. Owner carries that risk. Item 3 (API 24) raises Android 7 support cost. Item 4 needs a migration from existing SharedPreferences data.
+- **Affected modules:** `app`, `core/data` (Room migration, sign-out policy), `docs/architecture/`, `docs/DECISION_LOG.md`.
+- **Verification:** Owner statement only. No code change in this entry. Package rename (`app.hushstream`) is still to do in the next batch.
+
+## D-016 — Sign-out data policy verified in code (implements D-015 item 5)
+- **Date:** 2026-11-26
+- **Decision:** Sign-out clears only the login tokens. Library, watch history, guest state and downloads stay on the device.
+- **Context:** Code read of `SupabaseAuthRepository.signOut` (clears `SecureTokenStore` only) and `HushApp` `onSignedOut` (resets guest flag and gate only). No code path deletes library or history on sign-out.
+- **Options considered:** Clear all local data on sign-out (rejected by D-015); tokens only (chosen).
+- **Chosen approach:** No code change needed. Policy is already met.
+- **Reason:** Owner decision D-015 item 5.
+- **Trade-offs:** A later Room migration must keep this behaviour, and a test should guard it.
+- **Affected modules:** `core/data` (remote/SupabaseAuthRepository, SecureTokenStore), `app` (HushApp).
+- **Verification:** Static code reading on branch `feature/batch2-identity-minsdk`. No device run. A unit test is still missing (UNVERIFIED).
+
+## D-017 — Room persistence for library and watch history (implements D-015 item 4)
+- **Date:** 2026-11-26
+- **Decision:** Library and watch history move from SharedPreferences JSON to Room (`hush.db`, tables `library` and `watch_history`). Repository interfaces are unchanged.
+- **Context:** Architecture §7 and ADR-010 call for Room. Downloads need a real database.
+- **Options considered:** Keep SharedPreferences; move to Room now (chosen).
+- **Chosen approach:** Room 2.6.1 with KSP 2.0.21-1.0.28. One-time import from the old JSON keys, removed only after the import transaction succeeds. History keeps the newest 200 rows.
+- **Reason:** Owner chose Room (D-015 item 4).
+- **Trade-offs:** Adds two build plugins and dependencies. Migration is not yet covered by a test. Downloads still wait on the owner's ADR-019 decision (now D-015 item 6).
+- **Affected modules:** `core/data` (`db/`, both local repositories), `gradle/libs.versions.toml`, root and `core/data` build files.
+- **Verification:** CI on `94fe317` (`feature/batch2-identity-minsdk`): Android build success, run 45765818890. Runtime import UNVERIFIED (no device, no unit test).
+
+## D-018 — Downloads: slice plan from NuvioMobile-Enhanced (plan only)
+- **Date:** 2026-11-26
+- **Decision:** Port Nuvio's downloads in ten slices (S1–S10), in the order in `docs/architecture/DOWNLOADS_PLAN.md`. No downloads code is built yet.
+- **Context:** Owner decision D-015 item 6 (do what Nuvio does). Nuvio's downloads are about 8,200 lines across 71 files, too large for one batch.
+- **Options considered:** One large port; sliced port in dependency order (chosen).
+- **Chosen approach:** S1 (model and queue policy) first. Each ported file gets a GPL-3.0 origin header. Package renamed to `app.hushstream`.
+- **Reason:** Keeps each batch reviewable and CI-verifiable.
+- **Trade-offs:** Downloads will not work end to end until S3 and S5 are done. WorkManager vs JobService is open for S3. Owner carries the legal risk of downloads (D-015 item 6).
+- **Affected modules:** `core/domain`, `core/data`, `app`, `design`, `docs/architecture`.
+- **Verification:** Plan only. No code change in this entry. CI and device checks come with each slice.
+
+## D-019 — Downloads S1 done: domain model and queue policy
+- **Date:** 2026-11-26
+- **Decision:** S1 of D-018 is implemented: `DownloadStatus`, `DownloadItem` (subset), `DownloadConcurrencyLimit`, `DownloadStatusCounts`, `DownloadQueuePolicy`, in `core/domain`.
+- **Context:** Ported from NuvioMobile-Enhanced 7aca5a0 with origin headers. Pure JVM, no Compose or player types.
+- **Options considered:** Port the full Nuvio model now (rejected: pulls in player, subtitle and Compose resources); port the pure subset (chosen).
+- **Chosen approach:** Subset in `core/domain/download`. Network state is passed in rather than read from a singleton.
+- **Reason:** Keeps S1 testable on CI with no Android dependencies.
+- **Trade-offs:** `DownloadItem` lacks player, subtitle and artwork fields until S5. Settings-backed `DownloadQueuePolicy.current()` waits for S2.
+- **Affected modules:** `core/domain` (download package, test), `.github/workflows/android.yml` (runs `:core:domain:test`).
+- **Verification:** CI success on `c4b5ae5`, run 45767517749, including `:core:domain:test`. Runtime not applicable yet (no UI or transfer).
+
+## D-020 — Product scope: HushStream = Nuvio features + CloudStream extension compatibility
+- **Date:** 2026-11-26
+- **Decision:** HushStream combines NuvioMobile-Enhanced's features (player, library, downloads, addons, sync, settings) with CloudStream extension compatibility, so existing CloudStream repositories and extensions work in the app. Android-only, Kotlin and Jetpack Compose.
+- **Context:** Owner statement in chat, 2026-11-26. Supersedes the earlier "Nuvio features only" reading. Matches the handover rule that existing CloudStream repositories must keep working (§0/§6).
+- **Options considered:** Nuvio features only; CloudStream only; combined (chosen).
+- **Chosen approach:** Build in batches. Nuvio parity first (downloads S2–S10, playback gaps, UI gaps from the parity audit). Then the CloudStream compatibility layer, which needs its own isolation design and security analysis before any third-party code runs (ADR-008, plugin runtime).
+- **Reason:** Owner decision.
+- **Trade-offs:** The CloudStream layer is the largest and riskiest part. It runs third-party extension code, so it needs a security review before it ships. M3 legal review is waived (D-013), so the owner carries that risk. Downloads from torrent or HLS-only streams stay unsupported, as in Nuvio.
+- **Affected modules:** all; first `core/data` (addon and extension loading), `core/player`, `app`.
+- **Verification:** Owner statement only. No code change in this entry.

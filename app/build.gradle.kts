@@ -6,12 +6,12 @@ plugins {
 }
 
 android {
-    namespace = "app.hush.placeholder"
+    namespace = "app.hushstream"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "app.hush.placeholder"
-        minSdk = 26
+        applicationId = "app.hushstream"
+        minSdk = 24
         targetSdk = 35
         versionCode = 1
         versionName = "0.0.1-skeleton"

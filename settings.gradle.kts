@@ -1,4 +1,4 @@
-// PLACEHOLDER namespace/applicationId: app.hush.placeholder (see docs/DECISION_LOG.md D-002).
+// PLACEHOLDER namespace/applicationId: app.hushstream (see docs/DECISION_LOG.md D-002).
 // Rename cost: see docs/architecture/DECISIONS.md ADR-004.
 
 pluginManagement {

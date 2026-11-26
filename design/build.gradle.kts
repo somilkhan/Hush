@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "app.hush.placeholder.design"
+    namespace = "app.hushstream.design"
     compileSdk = 35
 
     defaultConfig {
-        minSdk = 26
+        minSdk = 24
     }
 
     compileOptions {

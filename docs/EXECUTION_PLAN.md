@@ -9,7 +9,7 @@
 - Source brief: `MASTER_HANDOVER.md` (Claude Project). If it conflicts with this repo, ask before changing.
 
 ## 2. Verified state
-- `main` in sync with origin. Bootstrap docs, Gradle skeleton (placeholder namespace `app.hush.placeholder`), design specs and compat specs are in.
+- `main` in sync with origin. Bootstrap docs, Gradle skeleton (placeholder namespace `app.hushstream`), design specs and compat specs are in.
 - Build: UNVERIFIED (no Android SDK, no Maven/Gradle access from the current environment).
 - Tests: none. Implemented features: none.
 

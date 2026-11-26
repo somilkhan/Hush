@@ -9,10 +9,11 @@ val localProps = Properties().apply {
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.ksp)
 }
 
 android {
-    namespace = "app.hush.placeholder.core.data"
+    namespace = "app.hushstream.core.data"
     compileSdk = 35
 
     buildFeatures {
@@ -20,7 +21,7 @@ android {
     }
 
     defaultConfig {
-        minSdk = 26
+        minSdk = 24
         // Keys come from local.properties (git-ignored). Empty means remote sync is off.
         buildConfigField("String", "SUPABASE_URL", "\"${localProps.getProperty("supabase.url", "")}\"")
         buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", "\"${localProps.getProperty("supabase.publishableKey", "")}\"")
@@ -36,6 +37,11 @@ dependencies {
     implementation(project(":core:domain"))
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.okhttp)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
 
     testImplementation(libs.junit)
+    // Real org.json for JVM unit tests (Android's stub throws).
+    testImplementation("org.json:json:20240303")
 }

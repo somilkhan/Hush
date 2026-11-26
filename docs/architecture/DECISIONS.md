@@ -22,10 +22,10 @@ Authoritative project log: `docs/DECISION_LOG.md`. This file records architectur
 
 ## ADR-004 — Placeholder namespace and applicationId
 - Status: ACCEPTED as provisional (DECISION_LOG D-002).
-- Decision: Use `app.hush.placeholder` for `namespace` and `applicationId`. Final value is deferred until the naming audit (trademark, store availability, domain ownership) is done.
+- Decision: Use `app.hushstream` for `namespace` and `applicationId`. Final value is deferred until the naming audit (trademark, store availability, domain ownership) is done.
 - Rename cost, to be paid later:
   1. `namespace` and `applicationId` in `app/build.gradle.kts`, and `namespace` in each library module.
-  2. Package directory and `package` line in every Kotlin file (`app/hush/placeholder` to the final path). Mechanical but touches every file.
+  2. Package directory and `package` line in every Kotlin file (`app/hushstream` to the final path). Mechanical but touches every file.
   3. `AndroidManifest.xml` class references are relative, so they change only with the package.
   4. Any stored data keyed by package name (DataStore file names are not, Room database name is set in code, but shared preferences, file paths under app data, and any deep-link or intent actions would be affected). Currently none exist, so the cost is low now and rises with every feature.
   5. Signing keys and store listing: if a release is ever signed under the placeholder ID, the applicationId cannot be changed for the same store listing. The rule is: do not sign or publish under the placeholder.
