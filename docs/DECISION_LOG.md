@@ -205,3 +205,14 @@ Format per MASTER_HANDOVER §4.
 - **Trade-offs:** `DownloadItem` lacks player, subtitle and artwork fields until S5. Settings-backed `DownloadQueuePolicy.current()` waits for S2.
 - **Affected modules:** `core/domain` (download package, test), `.github/workflows/android.yml` (runs `:core:domain:test`).
 - **Verification:** CI success on `c4b5ae5`, run 45767517749, including `:core:domain:test`. Runtime not applicable yet (no UI or transfer).
+
+## D-020 — Product scope: HushStream = Nuvio features + CloudStream extension compatibility
+- **Date:** 2026-11-26
+- **Decision:** HushStream combines NuvioMobile-Enhanced's features (player, library, downloads, addons, sync, settings) with CloudStream extension compatibility, so existing CloudStream repositories and extensions work in the app. Android-only, Kotlin and Jetpack Compose.
+- **Context:** Owner statement in chat, 2026-11-26. Supersedes the earlier "Nuvio features only" reading. Matches the handover rule that existing CloudStream repositories must keep working (§0/§6).
+- **Options considered:** Nuvio features only; CloudStream only; combined (chosen).
+- **Chosen approach:** Build in batches. Nuvio parity first (downloads S2–S10, playback gaps, UI gaps from the parity audit). Then the CloudStream compatibility layer, which needs its own isolation design and security analysis before any third-party code runs (ADR-008, plugin runtime).
+- **Reason:** Owner decision.
+- **Trade-offs:** The CloudStream layer is the largest and riskiest part. It runs third-party extension code, so it needs a security review before it ships. M3 legal review is waived (D-013), so the owner carries that risk. Downloads from torrent or HLS-only streams stay unsupported, as in Nuvio.
+- **Affected modules:** all; first `core/data` (addon and extension loading), `core/player`, `app`.
+- **Verification:** Owner statement only. No code change in this entry.
