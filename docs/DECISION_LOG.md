@@ -132,3 +132,14 @@ Format per MASTER_HANDOVER §4.
 - **Trade-offs:** No independent legal opinion on file. Owner carries the legal risk. Extension code from third parties still needs its own permission check and a security analysis (ADR and execution-plan rule 5).
 - **Affected modules:** `docs/compatibility/`, `core/data` (future compat layer), `:app`.
 - **Verification:** Owner statement only. No written evidence in the repo.
+
+## D-014 — Public app name: HushStream
+- **Date:** 2026-11-26
+- **Decision:** The owner's final app name is **HushStream** (display name). The working name HUSH is retired for user-facing text.
+- **Context:** Owner chose the name in chat. Repo, package and namespace (`app.hush.placeholder`) are not yet changed.
+- **Options considered:** Keep HUSH (working name); HushStream (chosen).
+- **Chosen approach:** Use HushStream for app label, About screen and store-facing text once implemented. Package, applicationId and repo name stay open under D-002 until the owner decides.
+- **Reason:** Owner decision.
+- **Trade-offs:** The name is not trademark-cleared (CLAUDE.md says the same for HUSH). Owner should run a trademark check before any store or public release. No legal advice given here.
+- **Affected modules:** `app` (string resources, label), `docs/` user-facing copy. No code changed in this entry.
+- **Verification:** Owner statement only. Name not yet applied to code; no build run.
