@@ -24,6 +24,7 @@ class MainActivity : ComponentActivity() {
                     historyRepository = container.historyRepository,
                     addonRegistry = container.addonRegistry,
                     guestStore = container.guestStore,
+                    onSessionReady = { container.startSync() },
                 )
             }
         }
