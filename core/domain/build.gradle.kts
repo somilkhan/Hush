@@ -17,6 +17,8 @@ tasks.withType<KotlinCompile>().configureEach {
 
 dependencies {
     implementation(libs.kotlinx.coroutines.core)
+    // Compat metadata parser only (JSON tree API, no compiler plugin). Pure JVM.
+    implementation(libs.kotlinx.serialization.json)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
