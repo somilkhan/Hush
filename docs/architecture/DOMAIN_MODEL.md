@@ -1,7 +1,7 @@
 # HUSH — Domain model
 
 Status: PROVISIONAL. Names and shapes are the app's own view. They must be mapped from the real CloudStream contracts by the compat adapter (Agent 1). Do not treat these as the authoritative CloudStream types.
-Code: `core/domain/src/main/kotlin/app/hush/placeholder/core/domain/model/` (identifiers only so far).
+Code: `core/domain/src/main/kotlin/app/hushstream/core/domain/model/` (identifiers only so far).
 
 ## 1. Identity
 - `ProviderId`: opaque, stable string for an installed provider. Survives app restarts.

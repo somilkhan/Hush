@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "app.hush.placeholder.core.player"
+    namespace = "app.hushstream.core.player"
     compileSdk = 35
 
     defaultConfig {

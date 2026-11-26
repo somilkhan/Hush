@@ -1,7 +1,7 @@
 # HUSH — Architecture
 
 Status: PROPOSED (Agent 2). Build status: UNVERIFIED (see docs/PROJECT_STATUS.md).
-Package namespace: PROVISIONAL `app.hush.placeholder` (DECISION_LOG D-002).
+Package namespace: PROVISIONAL `app.hushstream` (DECISION_LOG D-002).
 
 ## 1. Principles
 - A new app. CloudStream is a reference for behaviour and reusable, licence-checked code, not a base.

@@ -20,7 +20,7 @@
 
 ## Top release blockers
 
-1. **Placeholder namespace is in every module** (`app.hush.placeholder`, see row 37). Must be renamed or formally accepted before any public release. Owner decision D-002.
+1. **Placeholder namespace is in every module** (`app.hushstream`, see row 37). Must be renamed or formally accepted before any public release. Owner decision D-002.
 2. **No signed release build.** CI builds only `assembleDebug`. `release` has no `signingConfig`, minify is off (ADR-020 requires a signed APK in CI). Upstream `mobile-release.yml` shows a keystore-from-secret pattern to adapt.
 3. **Auth gate defect (new, D-1 below).** An expired access token plus a network failure at launch sends a signed-in user to the login screen. Tokens are kept, so this is a UX and sync-availability bug, not data loss. Runtime behaviour is UNVERIFIED.
 
@@ -75,7 +75,7 @@ Also: CI never runs tests (`SyncMergeTest` and `DemoMediaRepositoryTest` exist b
 | 34 | NOTICE with third-party attribution to NuvioMobile-Enhanced | ALREADY IMPLEMENTED | `NOTICE` | Matches D-009 "open" item (now present). |
 | 35 | Copyright holder text ("HUSH contributors") | NEEDS INVESTIGATION | `NOTICE` line 2; CLAUDE.md "copyright holder" is an owner decision | Owner decision. |
 | 36 | No CloudStream code and no `com.lagradost` names in the tree | ALREADY IMPLEMENTED | grep across `*.kt`, `*.kts`, `*.xml`, `*.toml`: no hits | Nothing to attribute yet. Attribution rules apply when code is ported. |
-| 37 | Placeholder namespace `app.hush.placeholder` (applicationId, namespace in 5 modules, package in about 100 files) | NEEDS INVESTIGATION | `app/build.gradle.kts`, `settings.gradle.kts`, `core/*/build.gradle.kts`, `design/build.gradle.kts` | Blocker for public release. Owner decision D-002 after trademark and store-name check. |
+| 37 | Placeholder namespace `app.hushstream` (applicationId, namespace in 5 modules, package in about 100 files) | NEEDS INVESTIGATION | `app/build.gradle.kts`, `settings.gradle.kts`, `core/*/build.gradle.kts`, `design/build.gradle.kts` | Blocker for public release. Owner decision D-002 after trademark and store-name check. |
 | 38 | No fake or demo data shown to users (rule 4) | ALREADY IMPLEMENTED | `AppContainer.kt` uses `EmptyMediaRepository` fallback; `DemoMediaRepository` is not referenced | `AppContainer` KDoc says "demo data is shown only while none is installed", which is inaccurate. Fix the comment (TAKE-level doc fix, folded into row 3 work). |
 | 39 | ADR-019 offline downloads (legal question) | NEEDS INVESTIGATION | ADR-019 status PROPOSED; `core/data/.../DataLayer.kt` is a placeholder comment; no download code exists | Recorded only. Owner must record the legal answer in DECISION_LOG before any download feature ships. Affected future module: `:core:download` (not created). No advice given. |
 | 40 | ADR-020 sideload release | see row 32 | | Merged into row 32 to avoid double counting. |

@@ -7,7 +7,7 @@ Last updated: 2026-11-24 (post-merge)
 - **Repository:** `somilkhan/Hush` (public, GPL-3.0). Attached and pushed. Remote URL: https://github.com/somilkhan/Hush.git
 - **Default branch:** `main` (HEAD `1253bb7`, bootstrap merged from `feature/project-bootstrap`).
 - **Branch / HEAD:** `main` at `1253bb7`, in sync with origin.
-- **Package namespace:** `app.hush.placeholder`. PROVISIONAL (DECISION_LOG D-002). Do not sign, publish or ship under it.
+- **Package namespace:** `app.hushstream`. PROVISIONAL (DECISION_LOG D-002). Do not sign, publish or ship under it.
 
 ## Toolchain (verified 2026-11-24)
 - JDK: OpenJDK 21.0.13 at `/usr/lib/jvm/java-21-openjdk-amd64`. Verified.

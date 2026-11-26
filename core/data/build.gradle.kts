@@ -12,7 +12,7 @@ plugins {
 }
 
 android {
-    namespace = "app.hush.placeholder.core.data"
+    namespace = "app.hushstream.core.data"
     compileSdk = 35
 
     buildFeatures {

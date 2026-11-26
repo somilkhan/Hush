@@ -7,10 +7,10 @@
 
 ## HUSH player surface (what exists today)
 
-- `core/player/src/main/kotlin/app/hush/placeholder/core/player/HushVideoPlayer.kt` (229 lines). Single URL, Media3 `ExoPlayer` with `PlayerView(useController = false)`.
+- `core/player/src/main/kotlin/app/hushstream/core/player/HushVideoPlayer.kt` (229 lines). Single URL, Media3 `ExoPlayer` with `PlayerView(useController = false)`.
 - Overlay: tap to toggle, 3 s auto-hide while playing, Back / Play-Pause / -10 s / +10 s / seek slider with time text.
 - Poll every 500 ms for state. `onProgress` every 5 s and on dispose. `ON_PAUSE` pauses and saves; `ON_RESUME` resumes if it was playing.
-- Caller: `app/src/main/kotlin/app/hush/placeholder/ui/HushApp.kt` (lines ~116-175). Saves history on positive positions. Resume uses `startMs` from history (automatic, no prompt).
+- Caller: `app/src/main/kotlin/app/hushstream/ui/HushApp.kt` (lines ~116-175). Saves history on positive positions. Resume uses `startMs` from history (automatic, no prompt).
 - Source choice: `ui/sources/SourcesScreen.kt`, then `startPlaying(PlayRequest(url, ...))`. One URL per play. No fallback.
 - `app/src/main/AndroidManifest.xml`: no `supportsPictureInPicture`, no foreground service, no media session.
 - No `Player.Listener`, no `setAudioAttributes`, no track selection, no speed, no resize control, no gestures beyond tap.

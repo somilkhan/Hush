@@ -15,9 +15,9 @@ Format per MASTER_HANDOVER §4.
 - **Affected modules:** all docs, app name strings, icon/branding concepts.
 - **Verification:** Trademark and store-name search NOT yet performed (open item).
 
-## D-002 — Package namespace and repo name: PROVISIONAL placeholder `app.hush.placeholder`
+## D-002 — Package namespace and repo name: PROVISIONAL placeholder `app.hushstream`
 - **Date:** 2026-11-24 (provisional placeholder added 2026-11-24)
-- **Decision:** Do not rename the repository (`somilkhan/Hush`) or pick the final package namespace until naming implications are audited. Scaffolding uses the clearly temporary namespace and applicationId `app.hush.placeholder` (`core:data` uses `app.hush.placeholder.core.data`). Do not sign, publish or ship under it.
+- **Decision:** Do not rename the repository (`somilkhan/Hush`) or pick the final package namespace until naming implications are audited. Scaffolding uses the clearly temporary namespace and applicationId `app.hushstream` (`core:data` uses `app.hushstream.core.data`). Do not sign, publish or ship under it.
 - **Context:** User asked not to rename blindly. Gradle skeleton needs a namespace to exist at all.
 - **Options considered:** (a) Use `com.somilkhan.hush`; (b) use a neutral reverse-domain owned by the user; (c) keep a placeholder namespace until legal/store check.
 - **Chosen approach:** Option (c) for scaffolding only. Final namespace still deferred to the naming audit.
@@ -136,7 +136,7 @@ Format per MASTER_HANDOVER §4.
 ## D-014 — Public app name: HushStream
 - **Date:** 2026-11-26
 - **Decision:** The owner's final app name is **HushStream** (display name). The working name HUSH is retired for user-facing text.
-- **Context:** Owner chose the name in chat. Repo, package and namespace (`app.hush.placeholder`) are not yet changed.
+- **Context:** Owner chose the name in chat. Repo, package and namespace (`app.hushstream`) are not yet changed.
 - **Options considered:** Keep HUSH (working name); HushStream (chosen).
 - **Chosen approach:** Use HushStream for app label, About screen and store-facing text once implemented. Package, applicationId and repo name stay open under D-002 until the owner decides.
 - **Reason:** Owner decision.
@@ -160,4 +160,4 @@ Format per MASTER_HANDOVER §4.
 - **Reason:** Owner decisions.
 - **Trade-offs:** Item 6 means downloads go ahead without a written legal opinion. Owner carries that risk. Item 3 (API 24) raises Android 7 support cost. Item 4 needs a migration from existing SharedPreferences data.
 - **Affected modules:** `app`, `core/data` (Room migration, sign-out policy), `docs/architecture/`, `docs/DECISION_LOG.md`.
-- **Verification:** Owner statement only. No code change in this entry. Package rename (`app.hush.placeholder`) is still to do in the next batch.
+- **Verification:** Owner statement only. No code change in this entry. Package rename (`app.hushstream`) is still to do in the next batch.

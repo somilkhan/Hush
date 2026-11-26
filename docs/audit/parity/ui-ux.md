@@ -5,7 +5,7 @@
 - Reference: `/home/claude/upstream-nuvio`, commit `7aca5a01896cfdf244f39660dd4d2c7e685b7dbb`
 - Method: static code reading only. No build, no run, no screenshots. Every visual claim is UNVERIFIED. Contrast figures are computed from the hex values in `HushColors.kt` (WCAG formula), not measured on device.
 - Scope: read-only. Out of scope (SKIP): Party, Discord, Trakt, Live TV.
-- Nuvio paths are relative to `composeApp/src/commonMain/kotlin/com/nuvio/app/`. HUSH paths are relative to `app/src/main/kotlin/app/hush/placeholder/` (UI) and `design/src/main/kotlin/app/hush/placeholder/design/` (tokens).
+- Nuvio paths are relative to `composeApp/src/commonMain/kotlin/com/nuvio/app/`. HUSH paths are relative to `app/src/main/kotlin/app/hushstream/` (UI) and `design/src/main/kotlin/app/hushstream/design/` (tokens).
 - Nuvio items marked "skimmed" were classified from the file inventory and top-level composable names, not read line by line.
 
 ## Classification key

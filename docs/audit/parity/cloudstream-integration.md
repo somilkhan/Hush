@@ -20,7 +20,7 @@ Verification tags: **[V]** read in source this session. **[C]** carried from exi
 
 | Area | File | Current behaviour [V] |
 |---|---|---|
-| HTTP client | `core/data/src/main/kotlin/app/hush/placeholder/core/data/addon/StremioClient.kt` | OkHttp 4.12.0. Requires `https://`. Reads at most 2,000,000 bytes, JSON only. Builds `catalog`, `meta`, `stream` paths. |
+| HTTP client | `core/data/src/main/kotlin/app/hushstream/core/data/addon/StremioClient.kt` | OkHttp 4.12.0. Requires `https://`. Reads at most 2,000,000 bytes, JSON only. Builds `catalog`, `meta`, `stream` paths. |
 | Repository | `.../addon/AddonMediaRepository.kt` | Fan-out over installed addons for featured and search, with per-addon `runCatching`. Max 40 featured items, max 4 catalogs per addon. Stream list keeps only `https://` URLs with no torrent support. |
 | Registry | `.../addon/PrefsAddonRegistry.kt` | Device-local SharedPreferences list (`hush_addons`). `add` fetches the manifest first. `normalise` requires https and appends `/manifest.json`. |
 | Item id | `.../addon/ItemKey.kt` | Base64url of base URL, type and meta id. Only `https://` bases decode. |

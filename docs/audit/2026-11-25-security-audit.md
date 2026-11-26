@@ -32,7 +32,7 @@ Supabase project: mrpagrxdyqooyfeybwqn (ap-south-1). Read-only queries and advis
 - **UI null handling.** Stream URLs come from `firstOrNull()?.url` and are checked with `?.let` and `enabled = url != null` (HeroBanner.kt:38, DetailsScreen.kt:122). No `!!` found in app/ui.
 - **Player releases on dispose.** `DisposableEffect(player) { onDispose { player.release() } }` in HushVideoPlayer.kt.
 - **M7 release items.** `LICENSE` exists with the GPL-3 header. `NOTICE` exists (436 bytes). The NOTICE content was not read.
-- **Placeholder namespace is still in code (open).** Namespace `app.hush.placeholder.core.data`. The M7 checklist item "placeholder namespace not shipped" stays open, as D-002 requires.
+- **Placeholder namespace is still in code (open).** Namespace `app.hushstream.core.data`. The M7 checklist item "placeholder namespace not shipped" stays open, as D-002 requires.
 
 ## Not checked, and why
 
