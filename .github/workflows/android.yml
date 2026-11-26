@@ -46,8 +46,8 @@ jobs:
             echo "supabase.publishableKey=$SUPABASE_PUBLISHABLE_KEY"
           } > local.properties
 
-      - name: Unit tests (core:data)
-        run: gradle :core:data:testDebugUnitTest --stacktrace --no-daemon
+      - name: Unit tests (core:domain, core:data)
+        run: gradle :core:domain:test :core:data:testDebugUnitTest --stacktrace --no-daemon
 
       - name: Build debug APK
         run: gradle :app:assembleDebug --stacktrace --no-daemon
