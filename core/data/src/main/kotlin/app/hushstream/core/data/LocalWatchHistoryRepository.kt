@@ -10,7 +10,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import org.json.JSONArray
 
 /**
  * Device-local watch history in Room, one row per (mediaId, episodeId), capped to the newest 200.
@@ -40,7 +39,7 @@ class LocalWatchHistoryRepository(context: Context) : WatchHistoryRepository {
         if (imported) return
         val text = legacy.getString("entries", null)
         if (text != null) {
-            val rows = parseLegacy(text).map { it.toRow() }
+            val rows = parseLegacyHistory(text).map { it.toRow() }
             db.withTransaction { rows.forEach { dao.upsert(it) } }
             dao.trim(MAX_ENTRIES)
             legacy.edit().remove("entries").apply()
@@ -48,23 +47,6 @@ class LocalWatchHistoryRepository(context: Context) : WatchHistoryRepository {
         imported = true
     }
 
-    private fun parseLegacy(text: String): List<WatchEntry> {
-        val array = runCatching { JSONArray(text) }.getOrNull() ?: return emptyList()
-        return (0 until array.length()).mapNotNull { i ->
-            runCatching {
-                val o = array.getJSONObject(i)
-                WatchEntry(
-                    mediaId = o.getString("mediaId"),
-                    episodeId = o.optString("episodeId"),
-                    positionMs = o.optLong("positionMs"),
-                    durationMs = o.optLong("durationMs"),
-                    completed = o.optBoolean("completed"),
-                    updatedAtEpochMs = o.optLong("updatedAtEpochMs"),
-                    title = o.optString("title"),
-                )
-            }.getOrNull()
-        }
-    }
 
     private fun WatchEntry.toRow() = HistoryRow(mediaId, episodeId, positionMs, durationMs, completed, updatedAtEpochMs, title)
 

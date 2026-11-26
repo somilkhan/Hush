@@ -42,4 +42,6 @@ dependencies {
     ksp(libs.androidx.room.compiler)
 
     testImplementation(libs.junit)
+    // Real org.json for JVM unit tests (Android's stub throws).
+    testImplementation("org.json:json:20240303")
 }

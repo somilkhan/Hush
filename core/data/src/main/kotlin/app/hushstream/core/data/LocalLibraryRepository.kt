@@ -11,7 +11,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import org.json.JSONArray
 
 /**
  * Device-local library (saved titles), stored in Room.
@@ -41,29 +40,13 @@ class LocalLibraryRepository(context: Context) : LibraryRepository {
         if (imported) return
         val text = legacy.getString("items", null)
         if (text != null) {
-            val rows = parseLegacy(text).map { it.toRow() }
+            val rows = parseLegacyLibrary(text).map { it.toRow() }
             db.withTransaction { rows.forEach { dao.upsert(it) } }
             legacy.edit().remove("items").apply()
         }
         imported = true
     }
 
-    private fun parseLegacy(text: String): List<LibraryEntry> {
-        val array = runCatching { JSONArray(text) }.getOrNull() ?: return emptyList()
-        return (0 until array.length()).mapNotNull { i ->
-            runCatching {
-                val o = array.getJSONObject(i)
-                LibraryEntry(
-                    mediaId = o.getString("mediaId"),
-                    kind = MediaKind.valueOf(o.getString("kind")),
-                    title = o.getString("title"),
-                    posterUrl = o.optString("posterUrl").ifBlank { null },
-                    saved = o.optBoolean("saved", true),
-                    updatedAtEpochMs = o.optLong("updatedAtEpochMs"),
-                )
-            }.getOrNull()
-        }
-    }
 
     private fun LibraryEntry.toRow() = LibraryRow(mediaId, kind.name, title, posterUrl, saved, updatedAtEpochMs)
 
