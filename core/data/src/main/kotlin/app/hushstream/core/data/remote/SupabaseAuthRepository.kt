@@ -4,6 +4,8 @@ import android.content.Context
 import app.hushstream.core.domain.account.AuthRepository
 import app.hushstream.core.domain.account.Session
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -24,6 +26,7 @@ class SupabaseAuthRepository(
 ) : AuthRepository {
 
     private val store = SecureTokenStore(context)
+    private val refreshLock = Mutex()
     private val jsonType = "application/json; charset=utf-8".toMediaType()
 
     private val configured: Boolean
@@ -31,14 +34,20 @@ class SupabaseAuthRepository(
 
     override suspend fun currentSession(): Session? = withContext(Dispatchers.IO) {
         val stored = readStored() ?: return@withContext null
-        if (stored.expiresAtEpochSec - nowSec() > 60) return@withContext stored.toSession()
+        if (isFresh(stored)) return@withContext stored.toSession()
         if (!configured) return@withContext null
-        val result = refresh(stored.refreshToken)
-        result.getOrNull() ?: run {
-            // Only a real rejection (400/401) ends the session. Network errors keep tokens for the next try.
-            if (result.exceptionOrNull() is AuthRejectedException) store.clear()
-            null
-        }
+        refreshGuarded(stored.refreshToken).fold(
+            onSuccess = { it.toSession() },
+            onFailure = { error ->
+                if (error is AuthRejectedException) {
+                    store.clear()
+                    null
+                } else {
+                    // Offline or server error: keep the stored session so the app stays usable and sync retries later.
+                    stored.toSession()
+                }
+            },
+        )
     }
 
     /**
@@ -47,15 +56,31 @@ class SupabaseAuthRepository(
      */
     suspend fun authorizedSession(): AuthorizedSession? = withContext(Dispatchers.IO) {
         val stored = readStored() ?: return@withContext null
-        if (stored.expiresAtEpochSec - nowSec() <= 60) {
+        if (!isFresh(stored)) {
             if (!configured) return@withContext null
-            val result = refresh(stored.refreshToken)
+            val result = refreshGuarded(stored.refreshToken)
             if (result.isFailure) {
                 if (result.exceptionOrNull() is AuthRejectedException) store.clear()
                 return@withContext null
             }
         }
         readStored()?.let { AuthorizedSession(userId = it.userId, accessToken = it.accessToken) }
+    }
+
+    private fun isFresh(stored: StoredSession): Boolean = stored.expiresAtEpochSec - nowSec() > 60
+
+    /**
+     * Serialises refreshes. If another caller already rotated the refresh token while we waited,
+     * reuse its result instead of spending the old token a second time (rotation would reject it).
+     */
+    private suspend fun refreshGuarded(staleRefreshToken: String): Result<StoredSession> = refreshLock.withLock {
+        val current = readStored()
+        if (current != null && current.refreshToken != staleRefreshToken && isFresh(current)) {
+            return@withLock Result.success(current)
+        }
+        refresh(current?.refreshToken ?: staleRefreshToken).mapCatching {
+            readStored() ?: error("Refresh stored no session")
+        }
     }
 
     override suspend fun signIn(email: String, password: String): Result<Session> = withContext(Dispatchers.IO) {
