@@ -161,3 +161,14 @@ Format per MASTER_HANDOVER §4.
 - **Trade-offs:** Item 6 means downloads go ahead without a written legal opinion. Owner carries that risk. Item 3 (API 24) raises Android 7 support cost. Item 4 needs a migration from existing SharedPreferences data.
 - **Affected modules:** `app`, `core/data` (Room migration, sign-out policy), `docs/architecture/`, `docs/DECISION_LOG.md`.
 - **Verification:** Owner statement only. No code change in this entry. Package rename (`app.hushstream`) is still to do in the next batch.
+
+## D-016 — Sign-out data policy verified in code (implements D-015 item 5)
+- **Date:** 2026-11-26
+- **Decision:** Sign-out clears only the login tokens. Library, watch history, guest state and downloads stay on the device.
+- **Context:** Code read of `SupabaseAuthRepository.signOut` (clears `SecureTokenStore` only) and `HushApp` `onSignedOut` (resets guest flag and gate only). No code path deletes library or history on sign-out.
+- **Options considered:** Clear all local data on sign-out (rejected by D-015); tokens only (chosen).
+- **Chosen approach:** No code change needed. Policy is already met.
+- **Reason:** Owner decision D-015 item 5.
+- **Trade-offs:** A later Room migration must keep this behaviour, and a test should guard it.
+- **Affected modules:** `core/data` (remote/SupabaseAuthRepository, SecureTokenStore), `app` (HushApp).
+- **Verification:** Static code reading on branch `feature/batch2-identity-minsdk`. No device run. A unit test is still missing (UNVERIFIED).
