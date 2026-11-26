@@ -57,17 +57,23 @@ fun HushApp(
     historyRepository: WatchHistoryRepository,
     addonRegistry: AddonRegistry,
     guestStore: GuestStore,
+    onSessionReady: () -> Unit = {},
 ) {
     HushTheme {
         var gate by remember { mutableStateOf(Gate.CHECKING) }
         LaunchedEffect(Unit) {
-            gate = if (authRepository.currentSession() != null || guestStore.isGuest) Gate.MAIN else Gate.LOGIN
+            val session = authRepository.currentSession()
+            gate = if (session != null || guestStore.isGuest) Gate.MAIN else Gate.LOGIN
+            if (session != null) onSessionReady()
         }
         when (gate) {
             Gate.CHECKING -> Box(Modifier.fillMaxSize().background(HushTokens.colors.canvas))
             Gate.LOGIN -> LoginScreen(
                 auth = authRepository,
-                onSignedIn = { gate = Gate.MAIN },
+                onSignedIn = {
+                    gate = Gate.MAIN
+                    onSessionReady()
+                },
                 onGuest = {
                     guestStore.isGuest = true
                     gate = Gate.MAIN

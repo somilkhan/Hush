@@ -32,7 +32,8 @@ class SyncEngine(
     private val localLibrary: LibraryRepository,
     private val localHistory: WatchHistoryRepository,
     private val remoteLibrary: RemoteStore<LibraryEntry>,
-    private val remoteHistory: RemoteStore<WatchEntry>,
+    /** Null until the watch_history remote migration is approved. History sync is then skipped, not failed. */
+    private val remoteHistory: RemoteStore<WatchEntry>?,
 ) {
     private val mutex = Mutex()
 
@@ -67,15 +68,16 @@ class SyncEngine(
 
     /** Returns (pushed, applied). */
     private suspend fun syncHistory(session: AuthorizedSession): Pair<Int, Int> {
+        val store = remoteHistory ?: return 0 to 0
         val local = localHistory.all()
-        val remote = remoteHistory.fetchAll(session)
+        val remote = store.fetchAll(session)
         val plan = SyncMerge.plan(
             local,
             remote,
             key = { it.mediaId to it.episodeId },
             updatedAtEpochMs = { it.updatedAtEpochMs },
         )
-        if (plan.pushRemote.isNotEmpty()) remoteHistory.upsertAll(session, plan.pushRemote)
+        if (plan.pushRemote.isNotEmpty()) store.upsertAll(session, plan.pushRemote)
         // Tombstones are not applied: WatchHistoryRepository has no remove API yet, so skipping keeps the local row.
         plan.applyLocal.filter { it.deletedAtEpochMs == null }.forEach { localHistory.record(it) }
         return plan.pushRemote.size to plan.applyLocal.size
