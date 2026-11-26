@@ -24,7 +24,8 @@ sealed interface SyncOutcome {
  * push the local winners, then write the remote winners into the local store. Fetching before
  * pushing is what keeps an old device from overwriting newer remote rows.
  *
- * Deletions are not synced yet: the remote has no tombstones, so a row removed locally returns on the next pull.
+ * Deletions: a tombstone (deletedAtEpochMs set) is merged like any row. Library tombstones remove the local row.
+ * Not yet end to end: the local stores still hard-delete, and the remote has no tombstone column (see docs/SYNC_STATUS.md).
  */
 class SyncEngine(
     private val sessionProvider: suspend () -> AuthorizedSession?,
@@ -57,7 +58,10 @@ class SyncEngine(
         val remote = remoteLibrary.fetchAll(session)
         val plan = SyncMerge.plan(local, remote, key = { it.mediaId }, updatedAtEpochMs = { it.updatedAtEpochMs })
         if (plan.pushRemote.isNotEmpty()) remoteLibrary.upsertAll(session, plan.pushRemote)
-        plan.applyLocal.forEach { localLibrary.upsert(it) }
+        plan.applyLocal.forEach { row ->
+            // A remote tombstone that wins removes the local row instead of resurrecting it.
+            if (row.deletedAtEpochMs != null) localLibrary.remove(row.mediaId) else localLibrary.upsert(row)
+        }
         return plan.pushRemote.size to plan.applyLocal.size
     }
 
@@ -72,7 +76,8 @@ class SyncEngine(
             updatedAtEpochMs = { it.updatedAtEpochMs },
         )
         if (plan.pushRemote.isNotEmpty()) remoteHistory.upsertAll(session, plan.pushRemote)
-        plan.applyLocal.forEach { localHistory.record(it) }
+        // Tombstones are not applied: WatchHistoryRepository has no remove API yet, so skipping keeps the local row.
+        plan.applyLocal.filter { it.deletedAtEpochMs == null }.forEach { localHistory.record(it) }
         return plan.pushRemote.size to plan.applyLocal.size
     }
 }
