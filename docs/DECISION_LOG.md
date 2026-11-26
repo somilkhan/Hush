@@ -194,3 +194,14 @@ Format per MASTER_HANDOVER §4.
 - **Trade-offs:** Downloads will not work end to end until S3 and S5 are done. WorkManager vs JobService is open for S3. Owner carries the legal risk of downloads (D-015 item 6).
 - **Affected modules:** `core/domain`, `core/data`, `app`, `design`, `docs/architecture`.
 - **Verification:** Plan only. No code change in this entry. CI and device checks come with each slice.
+
+## D-019 — Downloads S1 done: domain model and queue policy
+- **Date:** 2026-11-26
+- **Decision:** S1 of D-018 is implemented: `DownloadStatus`, `DownloadItem` (subset), `DownloadConcurrencyLimit`, `DownloadStatusCounts`, `DownloadQueuePolicy`, in `core/domain`.
+- **Context:** Ported from NuvioMobile-Enhanced 7aca5a0 with origin headers. Pure JVM, no Compose or player types.
+- **Options considered:** Port the full Nuvio model now (rejected: pulls in player, subtitle and Compose resources); port the pure subset (chosen).
+- **Chosen approach:** Subset in `core/domain/download`. Network state is passed in rather than read from a singleton.
+- **Reason:** Keeps S1 testable on CI with no Android dependencies.
+- **Trade-offs:** `DownloadItem` lacks player, subtitle and artwork fields until S5. Settings-backed `DownloadQueuePolicy.current()` waits for S2.
+- **Affected modules:** `core/domain` (download package, test), `.github/workflows/android.yml` (runs `:core:domain:test`).
+- **Verification:** CI success on `c4b5ae5`, run 45767517749, including `:core:domain:test`. Runtime not applicable yet (no UI or transfer).

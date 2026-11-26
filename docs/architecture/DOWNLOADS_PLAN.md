@@ -11,7 +11,7 @@ Every ported file carries a header: `Adapted from NuvioMobile-Enhanced (GPL-3.0)
 
 | # | Slice | Nuvio files (lines) | Class | Depends on |
 |---|---|---|---|---|
-| S1 | Domain model and queue policy | `DownloadsModels` (197), `DownloadQueuePolicy` (56), `DownloadDisplay` (49), `DownloadStatusTexts` (41), `DownloadSpeeds` (38) | ADAPT | Room (D-017) |
+| S1 ✅ | Domain model and queue policy (done, c4b5ae5, CI run 45767517749) | `DownloadsModels` (197), `DownloadQueuePolicy` (56), `DownloadDisplay` (49), `DownloadStatusTexts` (41), `DownloadSpeeds` (38) | ADAPT | Room (D-017) |
 | S2 | Storage and settings | `AndroidDownloadStore` (92), `DownloadsStorage.android` (67), `DownloadsSettingsStorage.android` (68), `DownloadsSettingsRepository` (101), `DownloadsStorageStats.android` (27) | ADAPT | S1 |
 | S3 | Transfer engine | `AndroidDownloadTransfer` (119), `DownloadsPlatformDownloader.android` (170), `DownloadsTransferWorker` (39), `DownloadsTransferJobService` (71), `AndroidDownloadScheduler` (381), `DownloadsRepository` (842) | ADAPT · NEEDS INVESTIGATION (WorkManager vs JobService) | S1, S2, network guard |
 | S4 | Network guard | `DownloadNetworkGuard` (11 + 50) | ADAPT | none |
