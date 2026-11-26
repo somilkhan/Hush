@@ -143,3 +143,21 @@ Format per MASTER_HANDOVER §4.
 - **Trade-offs:** The name is not trademark-cleared (CLAUDE.md says the same for HUSH). Owner should run a trademark check before any store or public release. No legal advice given here.
 - **Affected modules:** `app` (string resources, label), `docs/` user-facing copy. No code changed in this entry.
 - **Verification:** Owner statement only. Name not yet applied to code; no build run.
+
+## D-015 — Owner decisions batch 1 (2026-11-26)
+- **Date:** 2026-11-26
+- **Decision:**
+  1. Push the Phase 1 audit branch and the theme fix branch to origin.
+  2. App name only: HushStream. Owner's personal name is not used in code identifiers.
+  3. minSdk follows Nuvio: API 24 (replaces the HUSH 26 default). Other SDK levels follow Nuvio.
+  4. Persistence: move to Room (best practice; supersedes SharedPreferences for library, history and downloads). Previously open under ARCHITECTURE §7 and ADR-010.
+  5. Sign-out keeps device-local guest data, watch history and downloads; only account credentials are cleared.
+  6. Downloads: follow what NuvioMobile-Enhanced does. Owner declined a separate lawyer review. ADR-019 is closed on owner instruction, with the legal risk carried by the owner.
+  7. Name check: owner states HushStream has no conflict. Owner has checked.
+- **Context:** Owner answers to the seven questions raised in chat on 2026-11-26.
+- **Options considered:** Per item, as raised in chat.
+- **Chosen approach:** As listed above.
+- **Reason:** Owner decisions.
+- **Trade-offs:** Item 6 means downloads go ahead without a written legal opinion. Owner carries that risk. Item 3 (API 24) raises Android 7 support cost. Item 4 needs a migration from existing SharedPreferences data.
+- **Affected modules:** `app`, `core/data` (Room migration, sign-out policy), `docs/architecture/`, `docs/DECISION_LOG.md`.
+- **Verification:** Owner statement only. No code change in this entry. Package rename (`app.hush.placeholder`) is still to do in the next batch.
