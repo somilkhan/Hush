@@ -21,11 +21,21 @@ Last updated: 2026-11-24 (post-merge)
 - Verification attempt: `gradle projects` with the system Gradle fails with "Plugin [id: 'com.android.application', version: '8.7.3'] was not found" (plugin repositories unreachable).
 - Do not claim the app compiles until a machine with network access and an Android SDK runs `./gradlew :app:assembleDebug` successfully.
 
-## Test status: none run.
+## Test status
+- CI `Android build` runs `assembleDebug` and, from commit d6b2b26, `:core:data:testDebugUnitTest`.
+- Unit tests in `core/data`: `LegacyPrefsParserTest` (added d6b2b26), `SyncMergeTest` (from the sync branch). CI result for d6b2b26: see DECISION_LOG D-017 once logged.
+- No device or instrumented test has been run. Runtime behaviour is UNVERIFIED.
 
-## Implemented features
-- None (UI, playback, persistence and compat are all unimplemented).
-- Skeleton files only: `MainActivity` placeholder with no data, domain identifier value classes (`ProviderId`, `MediaRef`, `EpisodeRef`), empty `:core:data` marker file.
+## Implemented features (code exists; runtime UNVERIFIED unless noted)
+- Login, sign-up and guest mode against Supabase Auth, with tokens encrypted by Android Keystore (`SecureTokenStore`). Sign-out clears tokens only (D-016). Build verified by CI.
+- Addon catalogue (Stremio protocol) with https-only, bounded reads. Sources screen to add and remove manifests.
+- Home with hero, Continue watching and poster rails. Details with season picker and episodes. Search across addons.
+- Library and watch history in Room (`hush.db`), with one-time import from the old JSON (D-017). Build verified by CI.
+- Player: Media3 ExoPlayer with a custom overlay, progress saved every 5 s and on release. Playback is single-URL with no error or failover handling.
+- Settings screen with account and sources entry points.
+- Sync engine and Supabase remote adapters exist but are NOT wired to app start.
+- Login theme fix (`fix/root-theme-wrap`, PR #2 into `feature/app-vertical-slice`). CI verified; visual check pending.
+- Not implemented: downloads, audio and subtitle track selection, PiP, compat layer for extensions.
 
 ## Documentation (Agent 2)
 - `docs/architecture/`: ARCHITECTURE, TECH_STACK, DOMAIN_MODEL, INTEGRATION_CONTRACTS (DRAFT, NOT AGREED), DATA_FLOW, DECISIONS.
