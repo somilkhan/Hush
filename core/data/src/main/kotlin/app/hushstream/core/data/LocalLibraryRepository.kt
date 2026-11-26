@@ -1,6 +1,9 @@
 package app.hushstream.core.data
 
 import android.content.Context
+import androidx.room.withTransaction
+import app.hushstream.core.data.db.HushDatabase
+import app.hushstream.core.data.db.LibraryRow
 import app.hushstream.core.domain.model.MediaKind
 import app.hushstream.core.domain.sync.LibraryEntry
 import app.hushstream.core.domain.sync.LibraryRepository
@@ -9,31 +12,43 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
-import org.json.JSONObject
 
 /**
- * Device-local library (saved titles). JSON in private preferences, mutex-guarded writes.
- * A malformed row is skipped instead of crashing every later read. Sync comes later behind the same interface.
+ * Device-local library (saved titles), stored in Room.
+ * On first use, rows from the old SharedPreferences JSON are copied in once. The old key is removed only after that copy succeeds.
  */
 class LocalLibraryRepository(context: Context) : LibraryRepository {
 
-    private val prefs = context.getSharedPreferences("hush_library", Context.MODE_PRIVATE)
+    private val db = HushDatabase.get(context)
+    private val dao = db.libraryDao()
+    private val legacy = context.getSharedPreferences("hush_library", Context.MODE_PRIVATE)
     private val lock = Mutex()
+    private var imported = false
 
     override suspend fun all(): List<LibraryEntry> = withContext(Dispatchers.IO) {
-        lock.withLock { read() }
+        lock.withLock { ensureImported(); dao.all().map { it.toEntry() } }
     }
 
     override suspend fun upsert(entry: LibraryEntry) = withContext(Dispatchers.IO) {
-        lock.withLock { write(read().filterNot { it.mediaId == entry.mediaId } + entry) }
+        lock.withLock { ensureImported(); dao.upsert(entry.toRow()) }
     }
 
     override suspend fun remove(mediaId: String) = withContext(Dispatchers.IO) {
-        lock.withLock { write(read().filterNot { it.mediaId == mediaId }) }
+        lock.withLock { ensureImported(); dao.remove(mediaId) }
     }
 
-    private fun read(): List<LibraryEntry> {
-        val text = prefs.getString("items", null) ?: return emptyList()
+    private suspend fun ensureImported() {
+        if (imported) return
+        val text = legacy.getString("items", null)
+        if (text != null) {
+            val rows = parseLegacy(text).map { it.toRow() }
+            db.withTransaction { rows.forEach { dao.upsert(it) } }
+            legacy.edit().remove("items").apply()
+        }
+        imported = true
+    }
+
+    private fun parseLegacy(text: String): List<LibraryEntry> {
         val array = runCatching { JSONArray(text) }.getOrNull() ?: return emptyList()
         return (0 until array.length()).mapNotNull { i ->
             runCatching {
@@ -50,19 +65,14 @@ class LocalLibraryRepository(context: Context) : LibraryRepository {
         }
     }
 
-    private fun write(entries: List<LibraryEntry>) {
-        val array = JSONArray()
-        entries.forEach { e ->
-            array.put(
-                JSONObject()
-                    .put("mediaId", e.mediaId)
-                    .put("kind", e.kind.name)
-                    .put("title", e.title)
-                    .put("posterUrl", e.posterUrl.orEmpty())
-                    .put("saved", e.saved)
-                    .put("updatedAtEpochMs", e.updatedAtEpochMs),
-            )
-        }
-        prefs.edit().putString("items", array.toString()).apply()
-    }
+    private fun LibraryEntry.toRow() = LibraryRow(mediaId, kind.name, title, posterUrl, saved, updatedAtEpochMs)
+
+    private fun LibraryRow.toEntry() = LibraryEntry(
+        mediaId = mediaId,
+        kind = MediaKind.valueOf(kind),
+        title = title,
+        posterUrl = posterUrl,
+        saved = saved,
+        updatedAtEpochMs = updatedAtEpochMs,
+    )
 }

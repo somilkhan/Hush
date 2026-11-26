@@ -1,6 +1,9 @@
 package app.hushstream.core.data
 
 import android.content.Context
+import androidx.room.withTransaction
+import app.hushstream.core.data.db.HushDatabase
+import app.hushstream.core.data.db.HistoryRow
 import app.hushstream.core.domain.sync.WatchEntry
 import app.hushstream.core.domain.sync.WatchHistoryRepository
 import kotlinx.coroutines.Dispatchers
@@ -8,30 +11,44 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
-import org.json.JSONObject
 
 /**
- * Device-local watch history, one row per (mediaId, episodeId). Capped to the most recent entries.
- * Stored as JSON in private preferences; Room and Supabase sync come later behind the same interface.
+ * Device-local watch history in Room, one row per (mediaId, episodeId), capped to the newest 200.
+ * Old SharedPreferences JSON is copied in once on first use, then its key is removed.
  */
 class LocalWatchHistoryRepository(context: Context) : WatchHistoryRepository {
 
-    private val prefs = context.getSharedPreferences("hush_history", Context.MODE_PRIVATE)
+    private val db = HushDatabase.get(context)
+    private val dao = db.historyDao()
+    private val legacy = context.getSharedPreferences("hush_history", Context.MODE_PRIVATE)
     private val lock = Mutex()
+    private var imported = false
 
     override suspend fun all(): List<WatchEntry> = withContext(Dispatchers.IO) {
-        lock.withLock { read() }
+        lock.withLock { ensureImported(); dao.all().map { it.toEntry() } }
     }
 
     override suspend fun record(entry: WatchEntry) = withContext(Dispatchers.IO) {
         lock.withLock {
-            val kept = read().filterNot { it.mediaId == entry.mediaId && it.episodeId == entry.episodeId }
-            write((kept + entry).takeLast(MAX_ENTRIES))
+            ensureImported()
+            dao.upsert(entry.toRow())
+            dao.trim(MAX_ENTRIES)
         }
     }
 
-    private fun read(): List<WatchEntry> {
-        val text = prefs.getString("entries", null) ?: return emptyList()
+    private suspend fun ensureImported() {
+        if (imported) return
+        val text = legacy.getString("entries", null)
+        if (text != null) {
+            val rows = parseLegacy(text).map { it.toRow() }
+            db.withTransaction { rows.forEach { dao.upsert(it) } }
+            dao.trim(MAX_ENTRIES)
+            legacy.edit().remove("entries").apply()
+        }
+        imported = true
+    }
+
+    private fun parseLegacy(text: String): List<WatchEntry> {
         val array = runCatching { JSONArray(text) }.getOrNull() ?: return emptyList()
         return (0 until array.length()).mapNotNull { i ->
             runCatching {
@@ -49,22 +66,17 @@ class LocalWatchHistoryRepository(context: Context) : WatchHistoryRepository {
         }
     }
 
-    private fun write(entries: List<WatchEntry>) {
-        val array = JSONArray()
-        entries.forEach { e ->
-            array.put(
-                JSONObject()
-                    .put("mediaId", e.mediaId)
-                    .put("episodeId", e.episodeId)
-                    .put("positionMs", e.positionMs)
-                    .put("durationMs", e.durationMs)
-                    .put("completed", e.completed)
-                    .put("updatedAtEpochMs", e.updatedAtEpochMs)
-                    .put("title", e.title),
-            )
-        }
-        prefs.edit().putString("entries", array.toString()).apply()
-    }
+    private fun WatchEntry.toRow() = HistoryRow(mediaId, episodeId, positionMs, durationMs, completed, updatedAtEpochMs, title)
+
+    private fun HistoryRow.toEntry() = WatchEntry(
+        mediaId = mediaId,
+        episodeId = episodeId,
+        positionMs = positionMs,
+        durationMs = durationMs,
+        completed = completed,
+        updatedAtEpochMs = updatedAtEpochMs,
+        title = title,
+    )
 
     private companion object {
         const val MAX_ENTRIES = 200

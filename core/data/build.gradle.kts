@@ -9,6 +9,7 @@ val localProps = Properties().apply {
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -36,6 +37,9 @@ dependencies {
     implementation(project(":core:domain"))
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.okhttp)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
 
     testImplementation(libs.junit)
 }
