@@ -172,3 +172,14 @@ Format per MASTER_HANDOVER §4.
 - **Trade-offs:** A later Room migration must keep this behaviour, and a test should guard it.
 - **Affected modules:** `core/data` (remote/SupabaseAuthRepository, SecureTokenStore), `app` (HushApp).
 - **Verification:** Static code reading on branch `feature/batch2-identity-minsdk`. No device run. A unit test is still missing (UNVERIFIED).
+
+## D-017 — Room persistence for library and watch history (implements D-015 item 4)
+- **Date:** 2026-11-26
+- **Decision:** Library and watch history move from SharedPreferences JSON to Room (`hush.db`, tables `library` and `watch_history`). Repository interfaces are unchanged.
+- **Context:** Architecture §7 and ADR-010 call for Room. Downloads need a real database.
+- **Options considered:** Keep SharedPreferences; move to Room now (chosen).
+- **Chosen approach:** Room 2.6.1 with KSP 2.0.21-1.0.28. One-time import from the old JSON keys, removed only after the import transaction succeeds. History keeps the newest 200 rows.
+- **Reason:** Owner chose Room (D-015 item 4).
+- **Trade-offs:** Adds two build plugins and dependencies. Migration is not yet covered by a test. Downloads still wait on the owner's ADR-019 decision (now D-015 item 6).
+- **Affected modules:** `core/data` (`db/`, both local repositories), `gradle/libs.versions.toml`, root and `core/data` build files.
+- **Verification:** CI on `94fe317` (`feature/batch2-identity-minsdk`): Android build success, run 45765818890. Runtime import UNVERIFIED (no device, no unit test).
