@@ -20,7 +20,7 @@ android {
     }
 
     defaultConfig {
-        minSdk = 26
+        minSdk = 24
         // Keys come from local.properties (git-ignored). Empty means remote sync is off.
         buildConfigField("String", "SUPABASE_URL", "\"${localProps.getProperty("supabase.url", "")}\"")
         buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", "\"${localProps.getProperty("supabase.publishableKey", "")}\"")
