@@ -183,3 +183,14 @@ Format per MASTER_HANDOVER §4.
 - **Trade-offs:** Adds two build plugins and dependencies. Migration is not yet covered by a test. Downloads still wait on the owner's ADR-019 decision (now D-015 item 6).
 - **Affected modules:** `core/data` (`db/`, both local repositories), `gradle/libs.versions.toml`, root and `core/data` build files.
 - **Verification:** CI on `94fe317` (`feature/batch2-identity-minsdk`): Android build success, run 45765818890. Runtime import UNVERIFIED (no device, no unit test).
+
+## D-018 — Downloads: slice plan from NuvioMobile-Enhanced (plan only)
+- **Date:** 2026-11-26
+- **Decision:** Port Nuvio's downloads in ten slices (S1–S10), in the order in `docs/architecture/DOWNLOADS_PLAN.md`. No downloads code is built yet.
+- **Context:** Owner decision D-015 item 6 (do what Nuvio does). Nuvio's downloads are about 8,200 lines across 71 files, too large for one batch.
+- **Options considered:** One large port; sliced port in dependency order (chosen).
+- **Chosen approach:** S1 (model and queue policy) first. Each ported file gets a GPL-3.0 origin header. Package renamed to `app.hushstream`.
+- **Reason:** Keeps each batch reviewable and CI-verifiable.
+- **Trade-offs:** Downloads will not work end to end until S3 and S5 are done. WorkManager vs JobService is open for S3. Owner carries the legal risk of downloads (D-015 item 6).
+- **Affected modules:** `core/domain`, `core/data`, `app`, `design`, `docs/architecture`.
+- **Verification:** Plan only. No code change in this entry. CI and device checks come with each slice.
